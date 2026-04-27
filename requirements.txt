@@ -1,0 +1,6 @@
+streamlit==1.56.0
+google-genai==1.73.1
+mediapipe==0.10.13
+opencv-python-headless==4.13.0.92
+numpy==2.4.4
+pillow==12.2.0
