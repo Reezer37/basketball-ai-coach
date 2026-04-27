@@ -12,7 +12,12 @@ from PIL import Image, ImageDraw
 # libGL for cv2, so this stub prevents an optional import from failing startup.
 sys.modules.setdefault("cv2", types.ModuleType("cv2"))
 
-from mediapipe.python.solutions import pose as mp_pose
+try:
+    import mediapipe as mp
+
+    mp_pose = mp.solutions.pose
+except (AttributeError, ModuleNotFoundError):
+    from mediapipe.python.solutions import pose as mp_pose
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--input", default="shot.mp4")
