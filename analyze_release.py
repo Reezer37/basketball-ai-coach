@@ -1,6 +1,9 @@
 import argparse
-import cv2
 import math
+from itertools import chain
+import imageio.v3 as iio
+import numpy as np
+from PIL import Image, ImageDraw
 from mediapipe.python.solutions import drawing_utils as mp_drawing
 from mediapipe.python.solutions import pose as mp_pose
 
@@ -28,16 +31,23 @@ def calc_angle(a, b, c):
     cos_angle = max(-1, min(1, dot / (mag_ab * mag_cb)))
     return math.degrees(math.acos(cos_angle))
 
-cap = cv2.VideoCapture(input_video)
-if not cap.isOpened():
+try:
+    frames = iio.imiter(input_video)
+    first_frame = next(frames)
+except Exception as exc:
     print(f"无法打开视频文件: {input_video}")
+    print(f"视频读取错误: {exc}")
     exit(1)
 
-fps = cap.get(cv2.CAP_PROP_FPS)
-frame_count = int(cap.get(cv2.CAP_PROP_FRAME_COUNT) or 0)
-video_width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH) or 0)
-video_height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT) or 0)
-print(f"视频信息: {video_width}x{video_height}, fps={fps:.2f}, frames={frame_count}")
+try:
+    metadata = iio.immeta(input_video)
+except Exception:
+    metadata = {}
+
+video_height, video_width = first_frame.shape[:2]
+fps = metadata.get("fps", 0)
+frame_count = metadata.get("nframes", 0)
+print(f"视频信息: {video_width}x{video_height}, fps={float(fps or 0):.2f}, frames={frame_count}")
 
 release_data = None
 best_wrist_y = 999999
@@ -55,17 +65,19 @@ with mp_pose.Pose(
     min_tracking_confidence=0.5
 ) as pose:
 
-    while True:
-        ret, frame = cap.read()
-        if not ret:
-            break
+    for frame in chain([first_frame], frames):
+        frame = np.asarray(frame)
+        if frame.ndim == 2:
+            frame = np.stack([frame] * 3, axis=-1)
+        if frame.shape[2] == 4:
+            frame = frame[:, :, :3]
 
-        rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        rgb = np.ascontiguousarray(frame)
         results = pose.process(rgb)
 
         if results.pose_landmarks:
             pose_frames += 1
-            h, w, _ = frame.shape
+            h, w, _ = rgb.shape
             lm = results.pose_landmarks.landmark
 
             wrist = lm[mp_pose.PoseLandmark.RIGHT_WRIST]
@@ -78,7 +90,7 @@ with mp_pose.Pose(
             if wrist_y < best_wrist_y:
                 best_wrist_y = wrist_y
                 release_data = {
-                    "frame": frame.copy(),
+                    "frame": rgb.copy(),
                     "landmarks": results.pose_landmarks,
                     "frame_index": frame_index,
                     "width": w,
@@ -97,7 +109,6 @@ with mp_pose.Pose(
 
         frame_index += 1
 
-cap.release()
 print("检测到人体姿态的帧数:", pose_frames)
 
 if not release_data or not dip_data:
@@ -160,17 +171,10 @@ mp_drawing.draw_landmarks(
     mp_pose.POSE_CONNECTIONS
 )
 
-cv2.putText(
-    frame,
-    f"Elbow: {elbow_angle:.1f}  Knee: {release_knee_angle:.1f}",
-    (30, 50),
-    cv2.FONT_HERSHEY_SIMPLEX,
-    0.9,
-    (255, 255, 255),
-    2
-)
-
-cv2.imwrite(output_image, frame)
+image = Image.fromarray(frame)
+draw = ImageDraw.Draw(image)
+draw.text((30, 30), f"Elbow: {elbow_angle:.1f}  Knee: {release_knee_angle:.1f}", fill=(255, 255, 255))
+image.save(output_image)
 
 print("出手瞬间帧号:", release_data["frame_index"])
 print("下蹲最低点帧号:", dip_data["frame_index"])

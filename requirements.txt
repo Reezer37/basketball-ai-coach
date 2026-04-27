@@ -1,6 +1,7 @@
 streamlit>=1.36,<2
 google-genai>=1.0,<2
 mediapipe>=0.10.30,<0.11
-opencv-python-headless==4.9.0.80
+imageio>=2.34,<3
+imageio-ffmpeg>=0.4.9,<1
 numpy>=1.26,<2
 pillow>=10,<13
