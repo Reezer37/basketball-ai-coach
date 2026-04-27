@@ -29,6 +29,15 @@ def calc_angle(a, b, c):
     return math.degrees(math.acos(cos_angle))
 
 cap = cv2.VideoCapture(input_video)
+if not cap.isOpened():
+    print(f"无法打开视频文件: {input_video}")
+    exit(1)
+
+fps = cap.get(cv2.CAP_PROP_FPS)
+frame_count = int(cap.get(cv2.CAP_PROP_FRAME_COUNT) or 0)
+video_width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH) or 0)
+video_height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT) or 0)
+print(f"视频信息: {video_width}x{video_height}, fps={fps:.2f}, frames={frame_count}")
 
 release_data = None
 best_wrist_y = 999999
@@ -37,6 +46,7 @@ lowest_hip_y = -1
 dip_data = None
 
 frame_index = 0
+pose_frames = 0
 
 with mp_pose.Pose(
     static_image_mode=False,
@@ -54,6 +64,7 @@ with mp_pose.Pose(
         results = pose.process(rgb)
 
         if results.pose_landmarks:
+            pose_frames += 1
             h, w, _ = frame.shape
             lm = results.pose_landmarks.landmark
 
@@ -87,6 +98,7 @@ with mp_pose.Pose(
         frame_index += 1
 
 cap.release()
+print("检测到人体姿态的帧数:", pose_frames)
 
 if not release_data or not dip_data:
     print("没有检测到完整人体动作")
