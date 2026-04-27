@@ -60,6 +60,7 @@ Please upload a short, clear shooting clip:
 """,
         "limited_title": "Limited video analysis",
         "limited_guidance": "The app could not extract reliable body landmarks from this clip, so exact angle metrics are unavailable. It will still provide basic coach feedback. A clearer full-body side-view video can unlock more detailed biomechanics.",
+        "debug_details": "Analysis diagnostics",
         "timing_warning": "The pose was detected, but the loading-to-release timing may be unreliable for this clip. The coach feedback will focus more on visible posture metrics.",
         "coach_error": "AI coach feedback returned an error:",
         "coach_timeout": "AI coach feedback timed out. Please retry later or use quick feedback.",
@@ -134,6 +135,7 @@ Please upload a short, clear shooting clip:
 """,
         "limited_title": "基础视频分析",
         "limited_guidance": "系统暂时无法从这段视频中稳定提取人体关键点，所以不会显示精确角度指标。但仍会给出基础教练点评；如果上传更清楚的侧面全身视频，可以获得更详细的生物力学分析。",
+        "debug_details": "分析诊断信息",
         "timing_warning": "系统已识别到人体姿态，但这段视频的“蓄力到出手节奏”指标可能不稳定。本次点评会更多参考可见姿态指标。",
         "coach_error": "AI 教练点评生成失败：",
         "coach_timeout": "AI 教练点评响应超时。可以稍后重试，或改用快速点评。",
@@ -247,6 +249,12 @@ def show_video_quality_guidance():
 def show_limited_analysis_guidance():
     st.warning(t["limited_title"])
     st.info(t["limited_guidance"])
+
+
+def show_debug_details(details):
+    if get_secret("SHOW_DEBUG_DETAILS", "false").lower() == "true" and details:
+        with st.expander(t["debug_details"]):
+            st.text(details[-2000:])
 
 
 def clear_previous_analysis():
@@ -418,6 +426,7 @@ if st.button(t["start_label"], type="primary", disabled=not can_analyze, use_con
         analysis_ok = False
         analysis_error_key = None
         fallback_analysis = False
+        analysis_debug = ""
         metrics = None
         score = None
         analyzed_image_bytes = None
@@ -452,6 +461,7 @@ if st.button(t["start_label"], type="primary", disabled=not can_analyze, use_con
 
             if analysis_error_key is None and analysis.returncode != 0:
                 fallback_analysis = True
+                analysis_debug = (analysis.stdout or "") + "\n" + (analysis.stderr or "")
 
             if analysis_error_key is None and not fallback_analysis:
                 try:
@@ -477,6 +487,7 @@ if st.button(t["start_label"], type="primary", disabled=not can_analyze, use_con
 
         if fallback_analysis:
             show_limited_analysis_guidance()
+            show_debug_details(analysis_debug)
         else:
             score_col, metrics_col = st.columns([0.65, 1.35], gap="large")
             st.session_state["analysis_metrics"] = metrics
