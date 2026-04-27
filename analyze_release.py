@@ -1,8 +1,11 @@
 import argparse
 import math
+import os
 import sys
 import types
 from itertools import chain
+from pathlib import Path
+from urllib.request import urlretrieve
 import imageio.v3 as iio
 import numpy as np
 from PIL import Image, ImageDraw
@@ -12,12 +15,47 @@ from PIL import Image, ImageDraw
 # libGL for cv2, so this stub prevents an optional import from failing startup.
 sys.modules.setdefault("cv2", types.ModuleType("cv2"))
 
+POSE_BACKEND = None
+mp = None
+mp_pose = None
+mp_tasks_python = None
+mp_tasks_vision = None
+
 try:
     import mediapipe as mp
 
-    mp_pose = mp.solutions.pose
-except (AttributeError, ModuleNotFoundError):
-    from mediapipe.python.solutions import pose as mp_pose
+    if (
+        not bool(int(os.getenv("FORCE_MEDIAPIPE_TASKS", "0")))
+        and hasattr(mp, "solutions")
+        and hasattr(mp.solutions, "pose")
+    ):
+        mp_pose = mp.solutions.pose
+        POSE_BACKEND = "solutions"
+except ModuleNotFoundError:
+    mp = None
+
+force_tasks = bool(int(os.getenv("FORCE_MEDIAPIPE_TASKS", "0")))
+
+if POSE_BACKEND is None and not force_tasks:
+    try:
+        from mediapipe.python.solutions import pose as mp_pose
+
+        POSE_BACKEND = "solutions"
+    except (AttributeError, ModuleNotFoundError):
+        pass
+
+if POSE_BACKEND is None:
+    try:
+        if mp is None:
+            import mediapipe as mp
+        from mediapipe.tasks import python as mp_tasks_python
+        from mediapipe.tasks.python import vision as mp_tasks_vision
+
+        POSE_BACKEND = "tasks"
+    except Exception as exc:
+        print("MediaPipe pose backend is unavailable.")
+        print(f"MediaPipe import error: {exc}")
+        exit(2)
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--input", default="shot.mp4")
@@ -47,6 +85,86 @@ POSE_CONNECTIONS = [
     (28, 30),
     (30, 32),
 ]
+
+POSE_MODEL_URL = (
+    "https://storage.googleapis.com/mediapipe-models/pose_landmarker/"
+    "pose_landmarker_lite/float16/latest/pose_landmarker_lite.task"
+)
+POSE_MODEL_PATH = Path("/tmp/basketball_ai_coach_pose_landmarker_lite.task")
+
+RIGHT_SHOULDER = 12
+RIGHT_ELBOW = 14
+RIGHT_WRIST = 16
+RIGHT_HIP = 24
+RIGHT_KNEE = 26
+RIGHT_ANKLE = 28
+NOSE = 0
+
+
+class SolutionsPoseDetector:
+    def __enter__(self):
+        self.pose = mp_pose.Pose(
+            static_image_mode=False,
+            model_complexity=1,
+            min_detection_confidence=0.5,
+            min_tracking_confidence=0.5,
+        )
+        self.pose.__enter__()
+        return self
+
+    def __exit__(self, exc_type, exc, tb):
+        return self.pose.__exit__(exc_type, exc, tb)
+
+    def process(self, rgb):
+        results = self.pose.process(rgb)
+        if not results.pose_landmarks:
+            return None
+        return results.pose_landmarks.landmark
+
+
+class TasksPoseDetector:
+    def __enter__(self):
+        ensure_pose_model()
+        base_options = mp_tasks_python.BaseOptions(model_asset_path=str(POSE_MODEL_PATH))
+        options = mp_tasks_vision.PoseLandmarkerOptions(
+            base_options=base_options,
+            running_mode=mp_tasks_vision.RunningMode.IMAGE,
+            num_poses=1,
+            min_pose_detection_confidence=0.5,
+            min_pose_presence_confidence=0.5,
+            min_tracking_confidence=0.5,
+            output_segmentation_masks=False,
+        )
+        self.detector = mp_tasks_vision.PoseLandmarker.create_from_options(options)
+        return self
+
+    def __exit__(self, exc_type, exc, tb):
+        self.detector.close()
+
+    def process(self, rgb):
+        image = mp.Image(image_format=mp.ImageFormat.SRGB, data=rgb)
+        result = self.detector.detect(image)
+        if not result.pose_landmarks:
+            return None
+        return result.pose_landmarks[0]
+
+
+def ensure_pose_model():
+    if POSE_MODEL_PATH.exists() and POSE_MODEL_PATH.stat().st_size > 0:
+        return
+    try:
+        urlretrieve(POSE_MODEL_URL, POSE_MODEL_PATH)
+    except Exception as exc:
+        print("Unable to download MediaPipe pose model.")
+        print(f"Model download error: {exc}")
+        exit(2)
+
+
+def create_pose_detector():
+    print("MediaPipe pose backend:", POSE_BACKEND)
+    if POSE_BACKEND == "solutions":
+        return SolutionsPoseDetector()
+    return TasksPoseDetector()
 
 def calc_angle(a, b, c):
     ab = [a[0] - b[0], a[1] - b[1]]
@@ -89,13 +207,7 @@ dip_data = None
 frame_index = 0
 pose_frames = 0
 
-with mp_pose.Pose(
-    static_image_mode=False,
-    model_complexity=1,
-    min_detection_confidence=0.5,
-    min_tracking_confidence=0.5
-) as pose:
-
+with create_pose_detector() as pose:
     for frame in chain([first_frame], frames):
         frame = np.asarray(frame)
         if frame.ndim == 2:
@@ -104,15 +216,15 @@ with mp_pose.Pose(
             frame = frame[:, :, :3]
 
         rgb = np.ascontiguousarray(frame)
-        results = pose.process(rgb)
+        landmarks = pose.process(rgb)
 
-        if results.pose_landmarks:
+        if landmarks:
             pose_frames += 1
             h, w, _ = rgb.shape
-            lm = results.pose_landmarks.landmark
+            lm = landmarks
 
-            wrist = lm[mp_pose.PoseLandmark.RIGHT_WRIST]
-            hip = lm[mp_pose.PoseLandmark.RIGHT_HIP]
+            wrist = lm[RIGHT_WRIST]
+            hip = lm[RIGHT_HIP]
 
             wrist_y = wrist.y * h
             hip_y = hip.y * h
@@ -122,7 +234,7 @@ with mp_pose.Pose(
                 best_wrist_y = wrist_y
                 release_data = {
                     "frame": rgb.copy(),
-                    "landmarks": results.pose_landmarks,
+                    "landmarks": landmarks,
                     "frame_index": frame_index,
                     "width": w,
                     "height": h
@@ -133,7 +245,7 @@ with mp_pose.Pose(
                 lowest_hip_y = hip_y
                 dip_data = {
                     "frame_index": frame_index,
-                    "landmarks": results.pose_landmarks,
+                    "landmarks": landmarks,
                     "width": w,
                     "height": h
                 }
@@ -148,17 +260,17 @@ if not release_data or not dip_data:
 
 # ===== 出手瞬间数据 =====
 frame = release_data["frame"]
-lm = release_data["landmarks"].landmark
+lm = release_data["landmarks"]
 w = release_data["width"]
 h = release_data["height"]
 
-right_shoulder = lm[mp_pose.PoseLandmark.RIGHT_SHOULDER]
-right_elbow = lm[mp_pose.PoseLandmark.RIGHT_ELBOW]
-right_wrist = lm[mp_pose.PoseLandmark.RIGHT_WRIST]
-right_hip = lm[mp_pose.PoseLandmark.RIGHT_HIP]
-right_knee = lm[mp_pose.PoseLandmark.RIGHT_KNEE]
-right_ankle = lm[mp_pose.PoseLandmark.RIGHT_ANKLE]
-nose = lm[mp_pose.PoseLandmark.NOSE]
+right_shoulder = lm[RIGHT_SHOULDER]
+right_elbow = lm[RIGHT_ELBOW]
+right_wrist = lm[RIGHT_WRIST]
+right_hip = lm[RIGHT_HIP]
+right_knee = lm[RIGHT_KNEE]
+right_ankle = lm[RIGHT_ANKLE]
+nose = lm[NOSE]
 
 s = (right_shoulder.x * w, right_shoulder.y * h)
 e = (right_elbow.x * w, right_elbow.y * h)
@@ -178,13 +290,13 @@ release_height = (nose.y * h) - (right_wrist.y * h)
 body_lean = (right_shoulder.x * w) - (right_hip.x * w)
 
 # ===== 下蹲最低点膝盖角度 =====
-dip_lm = dip_data["landmarks"].landmark
+dip_lm = dip_data["landmarks"]
 dw = dip_data["width"]
 dh = dip_data["height"]
 
-dip_hip_lm = dip_lm[mp_pose.PoseLandmark.RIGHT_HIP]
-dip_knee_lm = dip_lm[mp_pose.PoseLandmark.RIGHT_KNEE]
-dip_ankle_lm = dip_lm[mp_pose.PoseLandmark.RIGHT_ANKLE]
+dip_hip_lm = dip_lm[RIGHT_HIP]
+dip_knee_lm = dip_lm[RIGHT_KNEE]
+dip_ankle_lm = dip_lm[RIGHT_ANKLE]
 
 dip_hip = (dip_hip_lm.x * dw, dip_hip_lm.y * dh)
 dip_knee = (dip_knee_lm.x * dw, dip_knee_lm.y * dh)
@@ -197,7 +309,7 @@ knee_extension = release_knee_angle - dip_knee_angle
 
 image = Image.fromarray(frame)
 draw = ImageDraw.Draw(image)
-landmarks = release_data["landmarks"].landmark
+landmarks = release_data["landmarks"]
 
 for start, end in POSE_CONNECTIONS:
     a = landmarks[start]
