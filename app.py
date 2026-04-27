@@ -58,6 +58,7 @@ Please upload a short, clear shooting clip:
 - Good lighting, steady camera, and at least 720p resolution
 - Include the full motion: dip/load, jump or extension, release, and follow-through
 """,
+        "timing_warning": "The pose was detected, but the loading-to-release timing may be unreliable for this clip. The coach feedback will focus more on visible posture metrics.",
         "coach_error": "AI coach feedback returned an error:",
         "coach_timeout": "AI coach feedback timed out. Please retry later or use quick feedback.",
         "score_title": "Form score",
@@ -129,6 +130,7 @@ Please upload a short, clear shooting clip:
 - 光线充足、镜头稳定，建议至少 720p
 - 包含完整动作：下蹲蓄力、起跳或伸展、出手、随球动作
 """,
+        "timing_warning": "系统已识别到人体姿态，但这段视频的“蓄力到出手节奏”指标可能不稳定。本次点评会更多参考可见姿态指标。",
         "coach_error": "AI 教练点评生成失败：",
         "coach_timeout": "AI 教练点评响应超时。可以稍后重试，或改用快速点评。",
         "score_title": "综合评分",
@@ -229,7 +231,7 @@ def load_metrics(result_path):
     }
 
 
-def metrics_are_reliable(metrics):
+def timing_is_reliable(metrics):
     return metrics["flow_frames"] > 0
 
 
@@ -447,9 +449,6 @@ if st.button(t["start_label"], type="primary", disabled=not can_analyze, use_con
                 except (FileNotFoundError, OSError, ValueError, TypeError):
                     analysis_error_key = "quality"
 
-            if analysis_error_key is None and not metrics_are_reliable(metrics):
-                analysis_error_key = "quality"
-
             if analysis_error_key is None:
                 score = calculate_score(metrics)
                 analyzed_image_bytes = analyzed_image_path.read_bytes() if analyzed_image_path.exists() else None
@@ -467,6 +466,8 @@ if st.button(t["start_label"], type="primary", disabled=not can_analyze, use_con
         st.success(t["done"])
         st.session_state["analysis_metrics"] = metrics
         st.session_state["analysis_score"] = score
+        if not timing_is_reliable(metrics):
+            st.warning(t["timing_warning"])
 
         with score_col:
             st.subheader(t["score_title"])
