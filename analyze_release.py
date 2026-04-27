@@ -1,9 +1,17 @@
 import argparse
 import math
+import sys
+import types
 from itertools import chain
 import imageio.v3 as iio
 import numpy as np
 from PIL import Image, ImageDraw
+
+# Newer MediaPipe imports optional drawing utilities that import cv2 at package
+# import time. The app does not use OpenCV, and Streamlit Cloud may not provide
+# libGL for cv2, so this stub prevents an optional import from failing startup.
+sys.modules.setdefault("cv2", types.ModuleType("cv2"))
+
 from mediapipe.python.solutions import pose as mp_pose
 
 parser = argparse.ArgumentParser()
