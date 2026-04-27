@@ -238,6 +238,17 @@ def show_video_quality_guidance():
     st.info(t["quality_guidance"])
 
 
+def clear_previous_analysis():
+    for key in [
+        "analyzed_image_bytes",
+        "analysis_metrics",
+        "analysis_score",
+        "coach_feedback",
+        "analysis_error_key",
+    ]:
+        st.session_state.pop(key, None)
+
+
 def metric_card(label, value, help_text):
     st.metric(label, value)
     st.caption(help_text)
@@ -345,7 +356,7 @@ with settings_col:
     if video:
         uploaded_video_bytes = video.getvalue()
         if st.session_state.get("uploaded_video_bytes") != uploaded_video_bytes:
-            st.session_state.pop("analyzed_image_bytes", None)
+            clear_previous_analysis()
         st.session_state["uploaded_video_bytes"] = uploaded_video_bytes
         st.session_state["uploaded_video_name"] = video.name
 
@@ -390,8 +401,15 @@ with media_col:
 can_analyze = "uploaded_video_bytes" in st.session_state
 
 if st.button(t["start_label"], type="primary", disabled=not can_analyze, use_container_width=True):
+    clear_previous_analysis()
     work_dir = tempfile.mkdtemp(prefix="basketball-ai-coach-")
     try:
+        analysis_ok = False
+        analysis_error_key = None
+        metrics = None
+        score = None
+        analyzed_image_bytes = None
+
         work_path = Path(work_dir)
         shot_path = work_path / "shot.mp4"
         result_path = work_path / "result.txt"
@@ -417,33 +435,38 @@ if st.button(t["start_label"], type="primary", disabled=not can_analyze, use_con
                     timeout=90,
                 )
             except subprocess.TimeoutExpired:
+                analysis_error_key = "analysis_timeout"
+                analysis = None
+
+            if analysis_error_key is None and analysis.returncode != 0:
+                analysis_error_key = "quality"
+
+            if analysis_error_key is None:
+                try:
+                    metrics = load_metrics(result_path)
+                except (FileNotFoundError, OSError, ValueError, TypeError):
+                    analysis_error_key = "quality"
+
+            if analysis_error_key is None and not metrics_are_reliable(metrics):
+                analysis_error_key = "quality"
+
+            if analysis_error_key is None:
+                score = calculate_score(metrics)
+                analyzed_image_bytes = analyzed_image_path.read_bytes() if analyzed_image_path.exists() else None
+                analysis_ok = True
+
+        if not analysis_ok:
+            if analysis_error_key == "analysis_timeout":
                 st.error(t["analysis_timeout"])
-                show_video_quality_guidance()
-                st.stop()
-
-            if analysis.returncode != 0:
-                show_video_quality_guidance()
-                st.stop()
-
-            try:
-                metrics = load_metrics(result_path)
-            except FileNotFoundError:
-                show_video_quality_guidance()
-                st.stop()
-            except (OSError, ValueError, TypeError):
-                show_video_quality_guidance()
-                st.stop()
-
-            if not metrics_are_reliable(metrics):
-                show_video_quality_guidance()
-                st.stop()
-
-            score = calculate_score(metrics)
-            analyzed_image_bytes = analyzed_image_path.read_bytes() if analyzed_image_path.exists() else None
+            show_video_quality_guidance()
+            st.session_state["analysis_error_key"] = analysis_error_key
+            st.stop()
 
         score_col, metrics_col = st.columns([0.65, 1.35], gap="large")
 
         st.success(t["done"])
+        st.session_state["analysis_metrics"] = metrics
+        st.session_state["analysis_score"] = score
 
         with score_col:
             st.subheader(t["score_title"])
@@ -522,6 +545,7 @@ if st.button(t["start_label"], type="primary", disabled=not can_analyze, use_con
             )
 
             if result.stdout:
+                st.session_state["coach_feedback"] = result.stdout
                 st.markdown(result.stdout)
             else:
                 st.info(t["no_feedback"])
