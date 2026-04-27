@@ -300,6 +300,45 @@ Requirements:
 """
 
 
+def build_fallback_prompt(mode, player_model, lang):
+    profile_text = PLAYER_PROFILES[lang][player_model]
+
+    if lang == "en":
+        detail = "brief" if mode == "quick" else "more detailed"
+        return f"""
+You are a professional basketball shooting coach.
+
+{profile_text}
+
+The uploaded shooting video could not be measured reliably with pose landmarks.
+Still provide a {detail} coach response that is useful for a basic shooting clip.
+
+Important:
+- Do not claim exact body angles, release height, timing, or knee extension.
+- Explain that a clearer side-view full-body video would allow more precise biomechanical metrics.
+- Give practical feedback a player can use: balance, set point, release path, follow-through, lower-body rhythm, and repeatability.
+- Keep the tone constructive and coach-like.
+- Output in English.
+"""
+
+    detail = "简短" if mode == "quick" else "相对详细"
+    return f"""
+你是一名专业篮球投篮教练。
+
+{profile_text}
+
+这段投篮视频暂时无法稳定提取人体关键点指标。
+请仍然给出一个{detail}、有用的基础教练点评。
+
+重要要求：
+- 不要声称已经测得具体角度、出手高度、节奏帧数或膝盖伸展幅度。
+- 说明如果视频是更清楚的侧面全身视角，就可以提供更精确的生物力学指标。
+- 给出球员马上能执行的建议：平衡、出手点、出手线路、随球动作、下肢节奏、动作可重复性。
+- 语气像真实教练，建设性，不要责怪用户。
+- 用中文输出。
+"""
+
+
 def pick_provider(provider):
     if provider != "auto":
         return provider
@@ -393,11 +432,15 @@ parser.add_argument("--lang", default="zh", choices=["zh", "en"])
 parser.add_argument("--provider", default=DEFAULT_PROVIDER, choices=["auto", "gemini", "openai"])
 parser.add_argument("--model", default="")
 parser.add_argument("--result", default=str(BASE_DIR / "result.txt"))
+parser.add_argument("--fallback", action="store_true")
 args = parser.parse_args()
 
-metrics = load_metrics(args.result)
-score = calculate_score(metrics)
-prompt = build_prompt(metrics, score, args.mode, args.player_model, args.lang)
+if args.fallback:
+    prompt = build_fallback_prompt(args.mode, args.player_model, args.lang)
+else:
+    metrics = load_metrics(args.result)
+    score = calculate_score(metrics)
+    prompt = build_prompt(metrics, score, args.mode, args.player_model, args.lang)
 
 status_text = "Generating AI coach feedback..." if args.lang == "en" else "正在生成 AI 教练点评..."
 heading = "===== AI Coach Feedback =====" if args.lang == "en" else "===== AI教练点评 ====="

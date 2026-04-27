@@ -58,6 +58,8 @@ Please upload a short, clear shooting clip:
 - Good lighting, steady camera, and at least 720p resolution
 - Include the full motion: dip/load, jump or extension, release, and follow-through
 """,
+        "limited_title": "Limited video analysis",
+        "limited_guidance": "The app could not extract reliable body landmarks from this clip, so exact angle metrics are unavailable. It will still provide basic coach feedback. A clearer full-body side-view video can unlock more detailed biomechanics.",
         "timing_warning": "The pose was detected, but the loading-to-release timing may be unreliable for this clip. The coach feedback will focus more on visible posture metrics.",
         "coach_error": "AI coach feedback returned an error:",
         "coach_timeout": "AI coach feedback timed out. Please retry later or use quick feedback.",
@@ -130,6 +132,8 @@ Please upload a short, clear shooting clip:
 - 光线充足、镜头稳定，建议至少 720p
 - 包含完整动作：下蹲蓄力、起跳或伸展、出手、随球动作
 """,
+        "limited_title": "基础视频分析",
+        "limited_guidance": "系统暂时无法从这段视频中稳定提取人体关键点，所以不会显示精确角度指标。但仍会给出基础教练点评；如果上传更清楚的侧面全身视频，可以获得更详细的生物力学分析。",
         "timing_warning": "系统已识别到人体姿态，但这段视频的“蓄力到出手节奏”指标可能不稳定。本次点评会更多参考可见姿态指标。",
         "coach_error": "AI 教练点评生成失败：",
         "coach_timeout": "AI 教练点评响应超时。可以稍后重试，或改用快速点评。",
@@ -238,6 +242,11 @@ def timing_is_reliable(metrics):
 def show_video_quality_guidance():
     st.error(t["quality_title"])
     st.info(t["quality_guidance"])
+
+
+def show_limited_analysis_guidance():
+    st.warning(t["limited_title"])
+    st.info(t["limited_guidance"])
 
 
 def clear_previous_analysis():
@@ -408,6 +417,7 @@ if st.button(t["start_label"], type="primary", disabled=not can_analyze, use_con
     try:
         analysis_ok = False
         analysis_error_key = None
+        fallback_analysis = False
         metrics = None
         score = None
         analyzed_image_bytes = None
@@ -441,17 +451,19 @@ if st.button(t["start_label"], type="primary", disabled=not can_analyze, use_con
                 analysis = None
 
             if analysis_error_key is None and analysis.returncode != 0:
-                analysis_error_key = "quality"
+                fallback_analysis = True
 
-            if analysis_error_key is None:
+            if analysis_error_key is None and not fallback_analysis:
                 try:
                     metrics = load_metrics(result_path)
                 except (FileNotFoundError, OSError, ValueError, TypeError):
-                    analysis_error_key = "quality"
+                    fallback_analysis = True
 
-            if analysis_error_key is None:
+            if analysis_error_key is None and not fallback_analysis:
                 score = calculate_score(metrics)
                 analyzed_image_bytes = analyzed_image_path.read_bytes() if analyzed_image_path.exists() else None
+                analysis_ok = True
+            elif analysis_error_key is None and fallback_analysis:
                 analysis_ok = True
 
         if not analysis_ok:
@@ -461,37 +473,40 @@ if st.button(t["start_label"], type="primary", disabled=not can_analyze, use_con
             st.session_state["analysis_error_key"] = analysis_error_key
             st.stop()
 
-        score_col, metrics_col = st.columns([0.65, 1.35], gap="large")
-
         st.success(t["done"])
-        st.session_state["analysis_metrics"] = metrics
-        st.session_state["analysis_score"] = score
-        if not timing_is_reliable(metrics):
-            st.warning(t["timing_warning"])
 
-        with score_col:
-            st.subheader(t["score_title"])
-            st.metric(t["score_label"], f"{score}/100")
-            st.markdown(f'<div class="score-note">{t["score_caption"]}</div>', unsafe_allow_html=True)
+        if fallback_analysis:
+            show_limited_analysis_guidance()
+        else:
+            score_col, metrics_col = st.columns([0.65, 1.35], gap="large")
+            st.session_state["analysis_metrics"] = metrics
+            st.session_state["analysis_score"] = score
+            if not timing_is_reliable(metrics):
+                st.warning(t["timing_warning"])
 
-        with metrics_col:
-            st.subheader(t["metrics_title"])
-            m1, m2, m3 = st.columns(3)
-            with m1:
-                metric_card(t["metric_elbow"], f'{metrics["elbow_angle"]:.1f}°', t["metric_elbow_help"])
-                metric_card(t["metric_dip_knee"], f'{metrics["dip_knee_angle"]:.1f}°', t["metric_dip_knee_help"])
-            with m2:
-                metric_card(t["metric_height"], f'{metrics["release_height"]:.1f} px', t["metric_height_help"])
-                metric_card(t["metric_release_knee"], f'{metrics["release_knee_angle"]:.1f}°', t["metric_release_knee_help"])
-            with m3:
-                metric_card(t["metric_lean"], f'{metrics["body_lean"]:.1f} px', t["metric_lean_help"])
-                metric_card(t["metric_extension"], f'{metrics["knee_extension"]:.1f}°', t["metric_extension_help"])
+            with score_col:
+                st.subheader(t["score_title"])
+                st.metric(t["score_label"], f"{score}/100")
+                st.markdown(f'<div class="score-note">{t["score_caption"]}</div>', unsafe_allow_html=True)
 
-            metric_card(t["metric_flow"], f'{metrics["flow_frames"]:.0f}', t["metric_flow_help"])
+            with metrics_col:
+                st.subheader(t["metrics_title"])
+                m1, m2, m3 = st.columns(3)
+                with m1:
+                    metric_card(t["metric_elbow"], f'{metrics["elbow_angle"]:.1f}°', t["metric_elbow_help"])
+                    metric_card(t["metric_dip_knee"], f'{metrics["dip_knee_angle"]:.1f}°', t["metric_dip_knee_help"])
+                with m2:
+                    metric_card(t["metric_height"], f'{metrics["release_height"]:.1f} px', t["metric_height_help"])
+                    metric_card(t["metric_release_knee"], f'{metrics["release_knee_angle"]:.1f}°', t["metric_release_knee_help"])
+                with m3:
+                    metric_card(t["metric_lean"], f'{metrics["body_lean"]:.1f} px', t["metric_lean_help"])
+                    metric_card(t["metric_extension"], f'{metrics["knee_extension"]:.1f}°', t["metric_extension_help"])
 
-        if analyzed_image_bytes:
-            st.session_state["analyzed_image_bytes"] = analyzed_image_bytes
-            st.image(analyzed_image_bytes, caption=t["pose_tab"], use_container_width=True)
+                metric_card(t["metric_flow"], f'{metrics["flow_frames"]:.0f}', t["metric_flow_help"])
+
+            if analyzed_image_bytes:
+                st.session_state["analyzed_image_bytes"] = analyzed_image_bytes
+                st.image(analyzed_image_bytes, caption=t["pose_tab"], use_container_width=True)
 
         st.subheader(t["coach_title"])
         coach_env = os.environ.copy()
@@ -534,6 +549,8 @@ if st.button(t["start_label"], type="primary", disabled=not can_analyze, use_con
         ]
         if model_override.strip():
             coach_command.extend(["--model", model_override.strip()])
+        if fallback_analysis:
+            coach_command.append("--fallback")
 
         try:
             result = subprocess.run(
