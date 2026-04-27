@@ -4,7 +4,6 @@ from itertools import chain
 import imageio.v3 as iio
 import numpy as np
 from PIL import Image, ImageDraw
-from mediapipe.python.solutions import drawing_utils as mp_drawing
 from mediapipe.python.solutions import pose as mp_pose
 
 parser = argparse.ArgumentParser()
@@ -16,6 +15,25 @@ args = parser.parse_args()
 input_video = args.input
 output_image = args.output_image
 result_path = args.result
+
+POSE_CONNECTIONS = [
+    (11, 12),
+    (11, 13),
+    (13, 15),
+    (12, 14),
+    (14, 16),
+    (11, 23),
+    (12, 24),
+    (23, 24),
+    (23, 25),
+    (25, 27),
+    (27, 29),
+    (29, 31),
+    (24, 26),
+    (26, 28),
+    (28, 30),
+    (30, 32),
+]
 
 def calc_angle(a, b, c):
     ab = [a[0] - b[0], a[1] - b[1]]
@@ -164,15 +182,21 @@ dip_knee_angle = calc_angle(dip_hip, dip_knee, dip_ankle)
 # 膝盖伸展幅度：越大说明下肢参与越明显
 knee_extension = release_knee_angle - dip_knee_angle
 
-# ===== 画图保存 =====
-mp_drawing.draw_landmarks(
-    frame,
-    release_data["landmarks"],
-    mp_pose.POSE_CONNECTIONS
-)
-
 image = Image.fromarray(frame)
 draw = ImageDraw.Draw(image)
+landmarks = release_data["landmarks"].landmark
+
+for start, end in POSE_CONNECTIONS:
+    a = landmarks[start]
+    b = landmarks[end]
+    ax, ay = int(a.x * w), int(a.y * h)
+    bx, by = int(b.x * w), int(b.y * h)
+    draw.line((ax, ay, bx, by), fill=(245, 245, 245), width=3)
+
+for landmark in landmarks:
+    x, y = int(landmark.x * w), int(landmark.y * h)
+    draw.ellipse((x - 4, y - 4, x + 4, y + 4), fill=(220, 0, 0), outline=(255, 255, 255), width=1)
+
 draw.text((30, 30), f"Elbow: {elbow_angle:.1f}  Knee: {release_knee_angle:.1f}", fill=(255, 255, 255))
 image.save(output_image)
 
