@@ -92,7 +92,7 @@ cap.release()
 
 if not release_data or not dip_data:
     print("没有检测到完整人体动作")
-    exit()
+    exit(1)
 
 # ===== 出手瞬间数据 =====
 frame = release_data["frame"]

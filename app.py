@@ -48,6 +48,16 @@ TEXT = {
         "analysis_error": "Motion analysis failed.",
         "result_missing": "Analysis did not produce a valid result file.",
         "result_invalid": "The result file is incomplete or unreadable.",
+        "analysis_timeout": "Analysis took too long and was stopped.",
+        "quality_title": "This video could not be analyzed reliably.",
+        "quality_guidance": """
+Please upload a short, clear shooting clip:
+- 3-8 seconds, no edits, cuts, or slow-motion effects
+- Full body visible from feet to shooting hand throughout the shot
+- Side view or 45-degree angle, with only one main shooter in frame
+- Good lighting, steady camera, and at least 720p resolution
+- Include the full motion: dip/load, jump or extension, release, and follow-through
+""",
         "coach_error": "AI coach feedback returned an error:",
         "coach_timeout": "AI coach feedback timed out. Please retry later or use quick feedback.",
         "score_title": "Form score",
@@ -109,6 +119,16 @@ TEXT = {
         "analysis_error": "动作分析失败。",
         "result_missing": "分析没有生成有效的结果文件。",
         "result_invalid": "结果文件不完整或无法读取。",
+        "analysis_timeout": "分析时间过长，已停止处理。",
+        "quality_title": "这段视频无法被稳定分析。",
+        "quality_guidance": """
+请上传一段更适合动作识别的投篮视频：
+- 时长 3-8 秒，不要剪辑、转场或慢动作特效
+- 从脚到投篮手全身始终清楚可见
+- 侧面或 45 度角拍摄，画面里尽量只有一个主要投篮人
+- 光线充足、镜头稳定，建议至少 720p
+- 包含完整动作：下蹲蓄力、起跳或伸展、出手、随球动作
+""",
         "coach_error": "AI 教练点评生成失败：",
         "coach_timeout": "AI 教练点评响应超时。可以稍后重试，或改用快速点评。",
         "score_title": "综合评分",
@@ -207,6 +227,15 @@ def load_metrics(result_path):
         "knee_extension": values[5],
         "flow_frames": values[6],
     }
+
+
+def metrics_are_reliable(metrics):
+    return metrics["flow_frames"] > 0
+
+
+def show_video_quality_guidance():
+    st.error(t["quality_title"])
+    st.info(t["quality_guidance"])
 
 
 def metric_card(label, value, help_text):
@@ -314,7 +343,10 @@ with settings_col:
     )
     video = st.file_uploader(t["upload_label"], type=["mp4", "mov", "m4v"])
     if video:
-        st.session_state["uploaded_video_bytes"] = video.getvalue()
+        uploaded_video_bytes = video.getvalue()
+        if st.session_state.get("uploaded_video_bytes") != uploaded_video_bytes:
+            st.session_state.pop("analyzed_image_bytes", None)
+        st.session_state["uploaded_video_bytes"] = uploaded_video_bytes
         st.session_state["uploaded_video_name"] = video.name
 
     provider = server_provider if server_provider in {"auto", "openai", "gemini"} else "auto"
@@ -367,35 +399,43 @@ if st.button(t["start_label"], type="primary", disabled=not can_analyze, use_con
         shot_path.write_bytes(st.session_state["uploaded_video_bytes"])
 
         with st.spinner(t["spinner"]):
-            analysis = subprocess.run(
-                [
-                    sys.executable,
-                    "analyze_release.py",
-                    "--input",
-                    str(shot_path),
-                    "--output-image",
-                    str(analyzed_image_path),
-                    "--result",
-                    str(result_path),
-                ],
-                cwd=BASE_DIR,
-                capture_output=True,
-                text=True,
-            )
+            try:
+                analysis = subprocess.run(
+                    [
+                        sys.executable,
+                        "analyze_release.py",
+                        "--input",
+                        str(shot_path),
+                        "--output-image",
+                        str(analyzed_image_path),
+                        "--result",
+                        str(result_path),
+                    ],
+                    cwd=BASE_DIR,
+                    capture_output=True,
+                    text=True,
+                    timeout=90,
+                )
+            except subprocess.TimeoutExpired:
+                st.error(t["analysis_timeout"])
+                show_video_quality_guidance()
+                st.stop()
 
             if analysis.returncode != 0:
-                st.error(t["analysis_error"])
-                if analysis.stderr:
-                    st.code(analysis.stderr)
+                show_video_quality_guidance()
                 st.stop()
 
             try:
                 metrics = load_metrics(result_path)
             except FileNotFoundError:
-                st.error(t["result_missing"])
+                show_video_quality_guidance()
                 st.stop()
             except (OSError, ValueError, TypeError):
-                st.error(t["result_invalid"])
+                show_video_quality_guidance()
+                st.stop()
+
+            if not metrics_are_reliable(metrics):
+                show_video_quality_guidance()
                 st.stop()
 
             score = calculate_score(metrics)
@@ -488,7 +528,6 @@ if st.button(t["start_label"], type="primary", disabled=not can_analyze, use_con
 
             if result.stderr:
                 st.error(t["coach_error"])
-                st.code(result.stderr)
         except subprocess.TimeoutExpired:
             st.error(t["coach_timeout"])
     finally:
