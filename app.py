@@ -350,6 +350,7 @@ st.markdown(
 )
 
 settings_col, media_col = st.columns([0.92, 1.55], gap="large")
+current_video_bytes = st.session_state.get("uploaded_video_bytes")
 
 with settings_col:
     st.subheader(t["settings"])
@@ -372,12 +373,13 @@ with settings_col:
         horizontal=True,
     )
     video = st.file_uploader(t["upload_label"], type=["mp4", "mov", "m4v"])
-    if video:
+    if video is not None:
         uploaded_video_bytes = video.getvalue()
         if st.session_state.get("uploaded_video_bytes") != uploaded_video_bytes:
             clear_previous_analysis()
         st.session_state["uploaded_video_bytes"] = uploaded_video_bytes
         st.session_state["uploaded_video_name"] = video.name
+        current_video_bytes = uploaded_video_bytes
 
     provider = server_provider if server_provider in {"auto", "openai", "gemini"} else "auto"
     openai_key = ""
@@ -407,8 +409,8 @@ with settings_col:
 with media_col:
     video_tab, pose_tab = st.tabs([t["video_tab"], t["pose_tab"]])
     with video_tab:
-        if "uploaded_video_bytes" in st.session_state:
-            st.video(st.session_state["uploaded_video_bytes"])
+        if current_video_bytes:
+            st.video(current_video_bytes)
         else:
             st.info(t["waiting"])
     with pose_tab:
@@ -417,7 +419,7 @@ with media_col:
         else:
             st.info(t["empty_pose"])
 
-can_analyze = "uploaded_video_bytes" in st.session_state
+can_analyze = current_video_bytes is not None
 
 if st.button(t["start_label"], type="primary", disabled=not can_analyze, use_container_width=True):
     clear_previous_analysis()
@@ -435,7 +437,7 @@ if st.button(t["start_label"], type="primary", disabled=not can_analyze, use_con
         shot_path = work_path / "shot.mp4"
         result_path = work_path / "result.txt"
         analyzed_image_path = work_path / "release_analyzed.jpg"
-        shot_path.write_bytes(st.session_state["uploaded_video_bytes"])
+        shot_path.write_bytes(current_video_bytes)
 
         with st.spinner(t["spinner"]):
             try:
