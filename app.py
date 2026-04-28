@@ -288,17 +288,24 @@ st.markdown(
         max-width: 1180px;
     }
     div[data-testid="stMetric"] {
-        background: #ffffff;
-        border: 1px solid #e7e4de;
+        background: rgba(127, 127, 127, 0.10);
+        border: 1px solid rgba(127, 127, 127, 0.26);
         border-radius: 8px;
         padding: 0.85rem 0.95rem;
         min-height: 110px;
     }
     div[data-testid="stMetricLabel"] {
-        color: #5b6573;
+        color: inherit;
+        opacity: 0.78;
+        font-weight: 650;
+    }
+    div[data-testid="stMetricValue"] {
+        color: inherit;
+        opacity: 1;
+        font-weight: 800;
     }
     .hero {
-        border-bottom: 1px solid #e7e4de;
+        border-bottom: 1px solid rgba(127, 127, 127, 0.30);
         padding-bottom: 1rem;
         margin-bottom: 1.2rem;
     }
@@ -316,12 +323,12 @@ st.markdown(
         margin: 0;
     }
     .hero p {
-        color: #485465;
+        opacity: 0.76;
         max-width: 760px;
         margin-top: 0.55rem;
     }
     .score-note {
-        color: #5b6573;
+        opacity: 0.78;
         font-size: 0.9rem;
         margin-top: -0.35rem;
     }
