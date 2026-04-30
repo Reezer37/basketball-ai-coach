@@ -11,6 +11,7 @@ import streamlit as st
 BASE_DIR = Path(__file__).resolve().parent
 
 LANG_OPTIONS = {
+    "Deutsch": "de",
     "English": "en",
     "中文": "zh",
 }
@@ -91,6 +92,81 @@ Please upload a short, clear shooting clip:
             "thompson": "Klay Thompson",
         },
     },
+    "de": {
+        "page_title": "KI Basketball Wurfanalyse",
+        "eyebrow": "Video-Wurfanalyse",
+        "title": "KI Basketball Wurfanalyse",
+        "desc": "Lade ein Wurfvideo hoch und erhalte eine technische Analyse zu Release, Beinarbeit, Balance und konkreten Coach-Hinweisen.",
+        "language": "Sprache",
+        "settings": "Analyse starten",
+        "style_label": "Referenzstil",
+        "mode_label": "Berichtsart",
+        "upload_label": "Wurfvideo hochladen",
+        "api_settings": "AI API Einstellungen",
+        "api_settings_help": "Nur für lokale Tests. Keys werden nicht im Code gespeichert.",
+        "provider_label": "AI Dienst",
+        "provider_auto": "Automatisch",
+        "provider_openai": "OpenAI",
+        "provider_gemini": "Gemini",
+        "openai_key_label": "OpenAI API key",
+        "gemini_key_label": "Gemini API key",
+        "model_label": "Modell überschreiben (optional)",
+        "missing_key": "Bitte zuerst einen API key konfigurieren, um Coach-Feedback zu erzeugen.",
+        "start_label": "Analyse starten",
+        "quick_label": "Kurzfeedback",
+        "detailed_label": "Detailbericht",
+        "video_tab": "Wurfvideo",
+        "pose_tab": "Release-Pose",
+        "empty_pose": "Starte die Analyse, um die markierte Release-Pose zu erzeugen.",
+        "waiting": "Lade ein Video hoch, um zu beginnen.",
+        "spinner": "Analysiere Wurfmechanik und erstelle Coach-Feedback...",
+        "done": "Analyse abgeschlossen.",
+        "analysis_error": "Bewegungsanalyse fehlgeschlagen.",
+        "result_missing": "Die Analyse hat keine gültige Ergebnisdatei erzeugt.",
+        "result_invalid": "Die Ergebnisdatei ist unvollständig oder nicht lesbar.",
+        "analysis_timeout": "Die Analyse hat zu lange gedauert und wurde gestoppt.",
+        "quality_title": "Dieses Video konnte nicht zuverlässig analysiert werden.",
+        "quality_guidance": """
+Bitte lade einen kurzen, klaren Wurfclip hoch:
+- 3-8 Sekunden, ohne Schnitte, Übergänge oder Zeitlupe
+- Der ganze Körper ist vom Fuß bis zur Wurfhand sichtbar
+- Seitenansicht oder 45-Grad-Winkel, möglichst nur eine Person im Bild
+- Gute Beleuchtung, ruhige Kamera, idealerweise mindestens 720p
+- Vollständige Bewegung: Dip/Load, Streckung, Release und Follow-through
+""",
+        "limited_title": "Eingeschränkte Videoanalyse",
+        "limited_guidance": "Das System konnte aus diesem Clip keine stabilen Körperpunkte extrahieren. Exakte Winkelwerte werden deshalb nicht angezeigt, aber du erhältst trotzdem grundlegendes Coach-Feedback. Ein klareres Ganzkörpervideo von der Seite ermöglicht detailliertere Biomechanik.",
+        "debug_details": "Analyse-Diagnose",
+        "timing_warning": "Die Pose wurde erkannt, aber der Timing-Wert vom Load bis zum Release ist bei diesem Clip möglicherweise unzuverlässig.",
+        "coach_error": "AI Coach-Feedback hat einen Fehler zurückgegeben:",
+        "coach_timeout": "AI Coach-Feedback hat zu lange gedauert. Bitte später erneut versuchen oder Kurzfeedback nutzen.",
+        "score_title": "Form-Score",
+        "score_label": "Wurfmechanik",
+        "score_caption": "Ein Qualitätswert für Balance, Timing und Wiederholbarkeit. Er ist keine Trefferwahrscheinlichkeit.",
+        "metrics_title": "Wichtige Biomechanik",
+        "coach_title": "AI Coach-Feedback",
+        "no_feedback": "Es wurde kein Coach-Feedback zurückgegeben.",
+        "metric_elbow": "Ellbogenwinkel",
+        "metric_elbow_help": "Streckung des Wurfarms im Moment des Releases.",
+        "metric_height": "Release-Höhe",
+        "metric_height_help": "Höhe des Handgelenks relativ zum Kopf; höhere positive Werte bedeuten einen höheren Release.",
+        "metric_lean": "Körperneigung",
+        "metric_lean_help": "Horizontaler Versatz zwischen Schulter und Hüfte; näher an 0 ist meist stabiler.",
+        "metric_dip_knee": "Kniewinkel im Dip",
+        "metric_dip_knee_help": "Kniewinkel am tiefsten Ladepunkt.",
+        "metric_release_knee": "Kniewinkel beim Release",
+        "metric_release_knee_help": "Kniewinkel im Moment des Releases.",
+        "metric_extension": "Kniestreckung",
+        "metric_extension_help": "Wie stark die Knie vom Dip bis zum Release strecken.",
+        "metric_flow": "Frames Load-zu-Release",
+        "metric_flow_help": "Frames zwischen tiefstem Dip und Release; sehr hohe Werte können auf eine Pause hindeuten.",
+        "styles": {
+            "general": "Allgemeine Wurfmechanik",
+            "curry": "Stephen Curry",
+            "durant": "Kevin Durant",
+            "thompson": "Klay Thompson",
+        },
+    },
     "zh": {
         "page_title": "AI篮球投篮教练",
         "eyebrow": "视频动作分析",
@@ -165,6 +241,108 @@ Please upload a short, clear shooting clip:
             "durant": "Kevin Durant",
             "thompson": "Klay Thompson",
         },
+    },
+}
+
+LANDING = {
+    "de": {
+        "headline": "Wurfanalyse ab 1,99 Euro testen",
+        "subhead": "Kein App-Download, kein Abo. Lade ein kurzes Wurfvideo hoch und erhalte einen verständlichen Technikbericht mit Score, Messwerten und konkreten Übungen.",
+        "cta": "Video hochladen",
+        "price": "Geplanter Testpreis: 1,99 Euro pro Basisbericht",
+        "proof": "Für Spieler, Eltern und Coaches, die schnell wissen wollen: Was macht meinen Wurf unkonstant?",
+        "cards": [
+            ("Was du bekommst", "Form-Score, Release-Pose, Ellbogenwinkel, Kniewinkel, Körperneigung und Coach-Feedback."),
+            ("Wofür es gedacht ist", "Ein schneller Check für Sprungwurf, Freiwurf oder Catch-and-Shoot Technik."),
+            ("Was es nicht ist", "Keine medizinische Beratung und keine Garantie, ob der einzelne Wurf getroffen wurde."),
+        ],
+        "sample_title": "Beispielbericht ansehen",
+        "sample_score": "Form-Score: 88/100",
+        "sample_metrics": [
+            "Ellbogenwinkel: 150 Grad",
+            "Kniewinkel beim Release: 153 Grad",
+            "Kniestreckung: 57 Grad",
+            "Körperneigung: stabil",
+        ],
+        "sample_feedback": [
+            "Starker Pluspunkt: guter Release und stabile Balance.",
+            "Wichtigster Fokus: den Oberkörper beim Hochgehen noch ruhiger halten.",
+            "Übung: 25 einhändige Formwürfe nah am Korb, danach 25 Catch-and-Shoot Würfe aus der Mitteldistanz.",
+        ],
+        "questions_title": "Häufige Fragen, die der Bericht beantworten soll",
+        "questions": [
+            "Warum ist mein Wurf jeden Tag anders?",
+            "Warum verfehle ich oft links oder rechts?",
+            "Stört meine Guide Hand den Release?",
+            "Nutze ich genug Beine oder zu viel Oberkörper?",
+            "Welche eine Sache sollte ich zuerst verbessern?",
+        ],
+    },
+    "en": {
+        "headline": "Test shot analysis from 1.99 Euro",
+        "subhead": "No app download and no subscription. Upload a short shooting clip and get a clear technique report with a score, mechanics, and practical drills.",
+        "cta": "Upload video",
+        "price": "Planned test price: 1.99 Euro per basic report",
+        "proof": "For players, parents, and coaches who want to know what makes a shot inconsistent.",
+        "cards": [
+            ("What you get", "Form score, release pose, elbow angle, knee angles, body lean, and coach feedback."),
+            ("Best use case", "A fast check for jump shots, free throws, or catch-and-shoot mechanics."),
+            ("What it is not", "Not medical advice and not a guarantee that one shot went in or missed."),
+        ],
+        "sample_title": "View sample report",
+        "sample_score": "Form score: 88/100",
+        "sample_metrics": [
+            "Elbow angle: 150 degrees",
+            "Release knee angle: 153 degrees",
+            "Knee extension: 57 degrees",
+            "Body lean: stable",
+        ],
+        "sample_feedback": [
+            "Main strength: solid release and stable balance.",
+            "Top focus: keep the torso quieter through the upward motion.",
+            "Drill: 25 one-hand form shots close to the rim, then 25 catch-and-shoot midrange shots.",
+        ],
+        "questions_title": "Common questions the report should answer",
+        "questions": [
+            "Why does my shot change every day?",
+            "Why do I miss left or right?",
+            "Is my guide hand affecting the release?",
+            "Am I using my legs enough?",
+            "What is the first thing I should improve?",
+        ],
+    },
+    "zh": {
+        "headline": "先测试 1.99 欧元投篮报告",
+        "subhead": "不用下载 App，也不用订阅。上传一段短投篮视频，获得包含评分、动作指标和训练建议的技术报告。",
+        "cta": "上传视频",
+        "price": "计划测试价：基础报告每份 1.99 欧元",
+        "proof": "适合想快速知道“为什么投篮不稳定”的球员、家长和教练。",
+        "cards": [
+            ("你会得到什么", "动作评分、出手姿态图、手肘角度、膝盖角度、身体前倾和教练反馈。"),
+            ("适合什么场景", "快速检查跳投、罚球或接球投的基础动作。"),
+            ("它不是什么", "不是医疗建议，也不判断单次投篮一定进或不进。"),
+        ],
+        "sample_title": "查看样例报告",
+        "sample_score": "动作评分：88/100",
+        "sample_metrics": [
+            "手肘角度：150 度",
+            "出手膝盖角度：153 度",
+            "膝盖伸展：57 度",
+            "身体前倾：稳定",
+        ],
+        "sample_feedback": [
+            "主要优点：出手稳定，平衡不错。",
+            "优先改进：向上发力时让上半身更安静。",
+            "训练建议：近筐单手定型投 25 个，再做中距离接球投 25 个。",
+        ],
+        "questions_title": "报告应该回答的常见问题",
+        "questions": [
+            "为什么我的投篮每天都不一样？",
+            "为什么总是偏左或偏右？",
+            "我的辅助手是否影响出手？",
+            "我是否用了足够的腿部力量？",
+            "我最应该先改哪一个问题？",
+        ],
     },
 }
 
@@ -273,6 +451,55 @@ def metric_card(label, value, help_text):
     st.caption(help_text)
 
 
+def render_landing(lang_code):
+    landing = LANDING[lang_code]
+    st.markdown(
+        f"""
+        <section class="market-hero">
+            <div class="market-copy">
+                <div class="eyebrow">{t["eyebrow"]}</div>
+                <h1>{landing["headline"]}</h1>
+                <p>{landing["subhead"]}</p>
+                <div class="market-price">{landing["price"]}</div>
+                <div class="market-proof">{landing["proof"]}</div>
+            </div>
+        </section>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    card_cols = st.columns(3)
+    for col, (title, body) in zip(card_cols, landing["cards"]):
+        with col:
+            st.markdown(
+                f"""
+                <div class="market-card">
+                    <h3>{title}</h3>
+                    <p>{body}</p>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+
+    with st.expander(landing["sample_title"], expanded=False):
+        sample_score_col, sample_text_col = st.columns([0.65, 1.35], gap="large")
+        with sample_score_col:
+            st.metric("Score", landing["sample_score"])
+            for item in landing["sample_metrics"]:
+                st.caption(item)
+        with sample_text_col:
+            for item in landing["sample_feedback"]:
+                st.markdown(f"- {item}")
+
+    st.markdown(f"#### {landing['questions_title']}")
+    q_cols = st.columns([1, 1])
+    for index, question in enumerate(landing["questions"]):
+        with q_cols[index % 2]:
+            st.markdown(f"- {question}")
+
+    st.divider()
+
+
 st.set_page_config(
     page_title=TEXT["en"]["page_title"],
     page_icon="🏀",
@@ -332,6 +559,52 @@ st.markdown(
         font-size: 0.9rem;
         margin-top: -0.35rem;
     }
+    .market-hero {
+        border: 1px solid rgba(127, 127, 127, 0.24);
+        border-radius: 8px;
+        padding: 1.2rem;
+        margin-bottom: 1rem;
+        background: rgba(127, 127, 127, 0.08);
+    }
+    .market-copy h1 {
+        font-size: 2.35rem;
+        line-height: 1.08;
+        margin: 0;
+    }
+    .market-copy p {
+        max-width: 820px;
+        opacity: 0.82;
+        margin: 0.7rem 0 0;
+    }
+    .market-price {
+        display: inline-block;
+        margin-top: 0.9rem;
+        padding: 0.45rem 0.7rem;
+        border: 1px solid rgba(248, 113, 113, 0.55);
+        border-radius: 6px;
+        color: #ff4b4b;
+        font-weight: 800;
+    }
+    .market-proof {
+        margin-top: 0.65rem;
+        opacity: 0.74;
+        font-size: 0.95rem;
+    }
+    .market-card {
+        border: 1px solid rgba(127, 127, 127, 0.24);
+        border-radius: 8px;
+        padding: 0.95rem;
+        min-height: 145px;
+        background: rgba(127, 127, 127, 0.07);
+    }
+    .market-card h3 {
+        font-size: 1.05rem;
+        margin: 0 0 0.45rem;
+    }
+    .market-card p {
+        opacity: 0.78;
+        margin: 0;
+    }
     </style>
     """,
     unsafe_allow_html=True,
@@ -344,6 +617,8 @@ language_label = st.selectbox(
 )
 lang_code = LANG_OPTIONS[language_label]
 t = TEXT[lang_code]
+
+render_landing(lang_code)
 
 st.markdown(
     f"""

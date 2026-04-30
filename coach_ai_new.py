@@ -133,11 +133,125 @@ Focus:
 - Repeatable motion
 """,
     },
+    "de": {
+        "curry": """
+Referenzstil: Stephen Curry
+Fokus:
+- Schneller Release-Rhythmus
+- Fließende Bewegung ohne sichtbare Pause
+- Gute Verbindung von Beinen, Core und Wurfarm
+- Release ist nicht immer maximal hoch, aber schnell, stabil und weich
+""",
+        "durant": """
+Referenzstil: Kevin Durant
+Fokus:
+- Sehr hoher Release-Punkt
+- Vollständige Körperstreckung
+- Komplette Armstreckung
+- Schwer zu blockender Wurf
+""",
+        "thompson": """
+Referenzstil: Klay Thompson
+Fokus:
+- Minimale, wiederholbare Bewegung
+- Stabiler Catch-and-Shoot Rhythmus
+- Vertikale Körperlinie und sauberer Release-Pfad
+- Beinimpuls und Oberkörper-Release bleiben synchron
+""",
+        "general": """
+Referenzstil: Allgemeine Wurfmechanik
+Fokus:
+- Stabiler Release
+- Körperbalance
+- Beteiligung der Beine
+- Wiederholbare Bewegung
+""",
+    },
 }
 
 
 def build_prompt(metrics, score, mode, player_model, lang):
     profile_text = PLAYER_PROFILES[lang][player_model]
+
+    if lang == "de":
+        shared = f"""
+Du bist ein professioneller Basketball-Wurfcoach.
+
+{profile_text}
+
+Wurfdaten:
+- Ellbogenwinkel beim Release: {metrics["elbow_angle"]} Grad
+- Release-Höhe relativ zum Kopf: {metrics["release_height"]}
+- Körperneigung: {metrics["body_lean"]}
+- Kniewinkel am tiefsten Dip: {metrics["dip_knee_angle"]} Grad
+- Kniewinkel beim Release: {metrics["release_knee_angle"]} Grad
+- Kniestreckung: {metrics["knee_extension"]} Grad
+- Frames vom Load bis zum Release: {metrics["flow_frames"]}
+- Gesamt-Form-Score: {score}/100
+
+Scoring-Regel:
+Erkläre, dass dieser Score die Qualität der Form, Balance, Timing und Wiederholbarkeit beschreibt. Beschreibe ihn nicht als Trefferquote.
+
+Wichtige Prinzipien:
+- Rhythmus und Kontinuität sind Basismerkmale guter Wurfqualität.
+- Der Star-Stil ist nur eine Trainingsreferenz, keine starre Bewertungsschablone.
+- Bewerte zuerst die grundlegende Wurfmechanik, dann den Bezug zum gewählten Stil.
+- Das ist eine Analyse von Stabilität und Wiederholbarkeit, keine Aussage darüber, ob der einzelne Wurf getroffen wurde.
+- Lehne den ganzen Wurf nicht wegen eines einzelnen Messwerts ab.
+- Fordere nicht, den Star mechanisch zu kopieren.
+"""
+        if mode == "quick":
+            return shared + """
+Gib kurze Abschnitte aus:
+
+[Referenzstil]
+Ein Satz zum gewählten Stil.
+
+[Score]
+Ein Satz, was der Form-Score bedeutet.
+
+[Fazit]
+Ein Satz zur Gesamtbewegung.
+
+[Stärken]
+Maximal 2 Punkte.
+
+[Optimierung]
+Maximal 2 Punkte.
+
+[Wichtigster Fokus]
+Maximal 2 wichtigste Stärken oder Probleme.
+
+[Nächster Schritt]
+Immer 1 konkretes Detail nennen, das verbessert werden kann.
+
+[Übungen]
+Maximal 2 Trainingsvorschläge.
+
+Anforderungen:
+- Kling wie ein echter Coach
+- Unter 10 Zeilen bleiben
+- Nicht nur "gut" sagen
+- Auf Deutsch ausgeben
+"""
+
+        return shared + """
+Analysiere:
+1. Ob der Ellbogenwinkel sinnvoll ist
+2. Ob die Release-Höhe niedrig, hoch oder passend ist
+3. Ob die Beine genug Power beitragen
+4. Rhythmus und Kontinuität der Wurfbewegung
+5. Gesamtqualität der Form
+6. Was der Score bedeutet
+7. Welche Teile zum gewählten Referenzstil passen und wie der Spieler näher daran kommt
+8. Zwei gezielte Trainingsvorschläge
+
+Anforderungen:
+- Professionell und konstruktiv
+- Probleme nicht übertreiben
+- Wie ein Coach klingen
+- Auf Deutsch ausgeben
+"""
 
     if lang == "en":
         shared = f"""
@@ -303,6 +417,24 @@ Requirements:
 def build_fallback_prompt(mode, player_model, lang):
     profile_text = PLAYER_PROFILES[lang][player_model]
 
+    if lang == "de":
+        detail = "kurzes" if mode == "quick" else "etwas detaillierteres"
+        return f"""
+Du bist ein professioneller Basketball-Wurfcoach.
+
+{profile_text}
+
+Das hochgeladene Wurfvideo konnte nicht zuverlässig mit Körperpunkten vermessen werden.
+Gib trotzdem ein {detail}, hilfreiches Coach-Feedback für einen grundlegenden Wurfclip.
+
+Wichtig:
+- Behaupte keine exakten Winkel, Release-Höhe, Timing-Werte oder Kniestreckung.
+- Erkläre, dass ein klareres Ganzkörpervideo von der Seite genauere biomechanische Werte ermöglichen würde.
+- Gib praktisches Feedback zu Balance, Set Point, Release-Pfad, Follow-through, Beinrhythmus und Wiederholbarkeit.
+- Konstruktiver Coach-Ton.
+- Auf Deutsch ausgeben.
+"""
+
     if lang == "en":
         detail = "brief" if mode == "quick" else "more detailed"
         return f"""
@@ -428,7 +560,7 @@ def generate_feedback(prompt, provider, model):
 parser = argparse.ArgumentParser()
 parser.add_argument("--mode", default="quick", choices=["quick", "detailed"])
 parser.add_argument("--player_model", default="general", choices=["general", "curry", "durant", "thompson"])
-parser.add_argument("--lang", default="zh", choices=["zh", "en"])
+parser.add_argument("--lang", default="zh", choices=["zh", "en", "de"])
 parser.add_argument("--provider", default=DEFAULT_PROVIDER, choices=["auto", "gemini", "openai"])
 parser.add_argument("--model", default="")
 parser.add_argument("--result", default=str(BASE_DIR / "result.txt"))
@@ -442,8 +574,16 @@ else:
     score = calculate_score(metrics)
     prompt = build_prompt(metrics, score, args.mode, args.player_model, args.lang)
 
-status_text = "Generating AI coach feedback..." if args.lang == "en" else "正在生成 AI 教练点评..."
-heading = "===== AI Coach Feedback =====" if args.lang == "en" else "===== AI教练点评 ====="
+status_text = {
+    "en": "Generating AI coach feedback...",
+    "de": "Erstelle AI Coach-Feedback...",
+    "zh": "正在生成 AI 教练点评...",
+}[args.lang]
+heading = {
+    "en": "===== AI Coach Feedback =====",
+    "de": "===== AI Coach-Feedback =====",
+    "zh": "===== AI教练点评 =====",
+}[args.lang]
 
 print(status_text, flush=True)
 
