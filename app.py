@@ -1,18 +1,15 @@
-import csv
 import os
 import shutil
 import subprocess
 import sys
 import tempfile
-from datetime import datetime, timezone
 from pathlib import Path
-from urllib.parse import quote
 
 import streamlit as st
 
 
 BASE_DIR = Path(__file__).resolve().parent
-LEADS_PATH = Path(tempfile.gettempdir()) / "basketball_ai_coach_interest.csv"
+TALLY_INTEREST_URL = "https://tally.so/r/oblEQO"
 
 LANG_OPTIONS = {
     "Deutsch": "de",
@@ -290,16 +287,9 @@ LANDING = {
             ("4. Übungen", "25 einhändige Formwürfe nah am Korb, danach 25 Catch-and-Shoot Würfe aus der Mitteldistanz."),
         ],
         "interest_title": "Würdest du so einen Bericht testen?",
-        "interest_text": "Hilf mit, den ersten bezahlten Test zu formen. Die Registrierung ist noch keine Bestellung.",
-        "interest_email": "E-Mail oder Kontaktmöglichkeit",
-        "interest_role": "Ich bin",
-        "interest_roles": ["Spieler", "Coach", "Elternteil", "Verein/Team", "Sonstiges"],
-        "interest_price": "Was wäre für einen Basisbericht fair?",
-        "interest_prices": ["1,99 Euro", "2,99 Euro", "4,99 Euro", "Lieber Abo/Paket", "Erst kostenlos testen"],
-        "interest_note": "Was soll der Bericht unbedingt beantworten?",
+        "interest_text": "Hilf mit, den ersten bezahlten Test zu formen. Die Registrierung ist noch keine Bestellung und dauert weniger als eine Minute.",
         "interest_submit": "Interesse vormerken",
-        "interest_success": "Danke! Dein Interesse wurde für diesen Test vorgemerkt.",
-        "interest_missing": "Bitte gib mindestens eine Kontaktmöglichkeit ein.",
+        "interest_hint": "Öffnet ein kurzes Tally-Formular in einem neuen Tab.",
     },
     "en": {
         "headline": "Test shot analysis from 1.99 Euro",
@@ -342,16 +332,9 @@ LANDING = {
             ("4. Drills", "25 one-hand form shots close to the rim, then 25 catch-and-shoot midrange shots."),
         ],
         "interest_title": "Would you test this report?",
-        "interest_text": "Help shape the first paid test. This is not an order yet.",
-        "interest_email": "Email or contact",
-        "interest_role": "I am a",
-        "interest_roles": ["Player", "Coach", "Parent", "Club/team", "Other"],
-        "interest_price": "What feels fair for a basic report?",
-        "interest_prices": ["1.99 Euro", "2.99 Euro", "4.99 Euro", "Prefer subscription/package", "Try free first"],
-        "interest_note": "What should the report answer?",
+        "interest_text": "Help shape the first paid test. This is not an order yet and takes less than a minute.",
         "interest_submit": "Register interest",
-        "interest_success": "Thanks! Your interest has been noted for this test.",
-        "interest_missing": "Please enter at least one contact option.",
+        "interest_hint": "Opens a short Tally form in a new tab.",
     },
     "zh": {
         "headline": "先测试 1.99 欧元投篮报告",
@@ -394,16 +377,9 @@ LANDING = {
             ("4. 训练", "近筐单手定型投 25 个，再做中距离接球投 25 个。"),
         ],
         "interest_title": "你会愿意测试这份报告吗？",
-        "interest_text": "帮我们确定第一版付费测试的方向。这还不是正式订单。",
-        "interest_email": "邮箱或联系方式",
-        "interest_role": "我是",
-        "interest_roles": ["球员", "教练", "家长", "俱乐部/球队", "其他"],
-        "interest_price": "你认为基础报告的合理价格是？",
-        "interest_prices": ["1.99 欧元", "2.99 欧元", "4.99 欧元", "更想要订阅/套餐", "先免费试用"],
-        "interest_note": "你希望报告必须回答什么？",
+        "interest_text": "帮我们确定第一版付费测试的方向。这还不是正式订单，填写不到一分钟。",
         "interest_submit": "登记兴趣",
-        "interest_success": "谢谢！你的兴趣已经记录在本次测试中。",
-        "interest_missing": "请至少填写一个联系方式。",
+        "interest_hint": "会在新标签页打开一个简短的 Tally 表单。",
     },
 }
 
@@ -512,27 +488,6 @@ def metric_card(label, value, help_text):
     st.caption(help_text)
 
 
-def save_interest_lead(lang_code, contact, role, price, note):
-    is_new = not LEADS_PATH.exists()
-    with LEADS_PATH.open("a", newline="", encoding="utf-8") as file:
-        writer = csv.DictWriter(
-            file,
-            fieldnames=["created_at", "lang", "contact", "role", "price", "note"],
-        )
-        if is_new:
-            writer.writeheader()
-        writer.writerow(
-            {
-                "created_at": datetime.now(timezone.utc).isoformat(),
-                "lang": lang_code,
-                "contact": contact,
-                "role": role,
-                "price": price,
-                "note": note,
-            }
-        )
-
-
 def render_landing(lang_code):
     landing = LANDING[lang_code]
     st.markdown(
@@ -590,26 +545,8 @@ def render_landing(lang_code):
 
     st.markdown(f"#### {landing['interest_title']}")
     st.caption(landing["interest_text"])
-    contact = st.text_input(landing["interest_email"], key=f"interest_contact_{lang_code}")
-    role = st.selectbox(landing["interest_role"], landing["interest_roles"], key=f"interest_role_{lang_code}")
-    price = st.selectbox(landing["interest_price"], landing["interest_prices"], key=f"interest_price_{lang_code}")
-    note = st.text_area(landing["interest_note"], height=90, key=f"interest_note_{lang_code}")
-    submitted = st.button(landing["interest_submit"], type="primary", key=f"interest_submit_{lang_code}")
-
-    if submitted:
-        if not contact.strip():
-            st.warning(landing["interest_missing"])
-        else:
-            save_interest_lead(lang_code, contact.strip(), role, price, note.strip())
-            st.success(landing["interest_success"])
-
-            contact_email = get_secret("CONTACT_EMAIL")
-            if contact_email:
-                subject = quote("Basketball AI Coach interest")
-                body = quote(
-                    f"Contact: {contact}\nRole: {role}\nPrice: {price}\nNeed: {note}"
-                )
-                st.markdown(f"[Send follow-up email](mailto:{contact_email}?subject={subject}&body={body})")
+    st.link_button(landing["interest_submit"], TALLY_INTEREST_URL, type="primary")
+    st.caption(landing["interest_hint"])
 
     st.divider()
 
