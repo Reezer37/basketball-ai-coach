@@ -1,14 +1,18 @@
+import csv
 import os
 import shutil
 import subprocess
 import sys
 import tempfile
+from datetime import datetime, timezone
 from pathlib import Path
+from urllib.parse import quote
 
 import streamlit as st
 
 
 BASE_DIR = Path(__file__).resolve().parent
+LEADS_PATH = Path(tempfile.gettempdir()) / "basketball_ai_coach_interest.csv"
 
 LANG_OPTIONS = {
     "Deutsch": "de",
@@ -277,6 +281,25 @@ LANDING = {
             "Nutze ich genug Beine oder zu viel Oberkörper?",
             "Welche eine Sache sollte ich zuerst verbessern?",
         ],
+        "report_title": "So sieht ein Basisbericht aus",
+        "report_summary": "Ein guter Report soll nicht zehn Baustellen öffnen, sondern die wichtigste Verbesserung klar priorisieren.",
+        "report_sections": [
+            ("1. Score", "88/100 - starke Grundmechanik, gute Balance, aber Timing vom Load bis zum Release noch etwas lang."),
+            ("2. Wichtigste Messwerte", "Ellbogenwinkel 150 Grad, Kniestreckung 57 Grad, Körperneigung stabil."),
+            ("3. Priorität", "Oberkörper beim Hochgehen ruhiger halten, damit der Release noch wiederholbarer wird."),
+            ("4. Übungen", "25 einhändige Formwürfe nah am Korb, danach 25 Catch-and-Shoot Würfe aus der Mitteldistanz."),
+        ],
+        "interest_title": "Würdest du so einen Bericht testen?",
+        "interest_text": "Hilf mit, den ersten bezahlten Test zu formen. Die Registrierung ist noch keine Bestellung.",
+        "interest_email": "E-Mail oder Kontaktmöglichkeit",
+        "interest_role": "Ich bin",
+        "interest_roles": ["Spieler", "Coach", "Elternteil", "Verein/Team", "Sonstiges"],
+        "interest_price": "Was wäre für einen Basisbericht fair?",
+        "interest_prices": ["1,99 Euro", "2,99 Euro", "4,99 Euro", "Lieber Abo/Paket", "Erst kostenlos testen"],
+        "interest_note": "Was soll der Bericht unbedingt beantworten?",
+        "interest_submit": "Interesse vormerken",
+        "interest_success": "Danke! Dein Interesse wurde für diesen Test vorgemerkt.",
+        "interest_missing": "Bitte gib mindestens eine Kontaktmöglichkeit ein.",
     },
     "en": {
         "headline": "Test shot analysis from 1.99 Euro",
@@ -310,6 +333,25 @@ LANDING = {
             "Am I using my legs enough?",
             "What is the first thing I should improve?",
         ],
+        "report_title": "What a basic report looks like",
+        "report_summary": "A useful report should not create ten problems. It should prioritize the next improvement clearly.",
+        "report_sections": [
+            ("1. Score", "88/100 - strong basic mechanics and balance, with load-to-release timing still a little long."),
+            ("2. Key metrics", "Elbow angle 150 degrees, knee extension 57 degrees, body lean stable."),
+            ("3. Priority", "Keep the torso quieter on the way up so the release becomes more repeatable."),
+            ("4. Drills", "25 one-hand form shots close to the rim, then 25 catch-and-shoot midrange shots."),
+        ],
+        "interest_title": "Would you test this report?",
+        "interest_text": "Help shape the first paid test. This is not an order yet.",
+        "interest_email": "Email or contact",
+        "interest_role": "I am a",
+        "interest_roles": ["Player", "Coach", "Parent", "Club/team", "Other"],
+        "interest_price": "What feels fair for a basic report?",
+        "interest_prices": ["1.99 Euro", "2.99 Euro", "4.99 Euro", "Prefer subscription/package", "Try free first"],
+        "interest_note": "What should the report answer?",
+        "interest_submit": "Register interest",
+        "interest_success": "Thanks! Your interest has been noted for this test.",
+        "interest_missing": "Please enter at least one contact option.",
     },
     "zh": {
         "headline": "先测试 1.99 欧元投篮报告",
@@ -343,6 +385,25 @@ LANDING = {
             "我是否用了足够的腿部力量？",
             "我最应该先改哪一个问题？",
         ],
+        "report_title": "基础报告示例",
+        "report_summary": "好的报告不应该一次制造十个问题，而是清楚指出下一步最该改什么。",
+        "report_sections": [
+            ("1. 评分", "88/100 - 基础动作和平衡较好，但蓄力到出手节奏仍有一点偏长。"),
+            ("2. 关键指标", "手肘角度 150 度，膝盖伸展 57 度，身体前倾稳定。"),
+            ("3. 优先级", "向上发力时保持上半身更安静，让出手更可重复。"),
+            ("4. 训练", "近筐单手定型投 25 个，再做中距离接球投 25 个。"),
+        ],
+        "interest_title": "你会愿意测试这份报告吗？",
+        "interest_text": "帮我们确定第一版付费测试的方向。这还不是正式订单。",
+        "interest_email": "邮箱或联系方式",
+        "interest_role": "我是",
+        "interest_roles": ["球员", "教练", "家长", "俱乐部/球队", "其他"],
+        "interest_price": "你认为基础报告的合理价格是？",
+        "interest_prices": ["1.99 欧元", "2.99 欧元", "4.99 欧元", "更想要订阅/套餐", "先免费试用"],
+        "interest_note": "你希望报告必须回答什么？",
+        "interest_submit": "登记兴趣",
+        "interest_success": "谢谢！你的兴趣已经记录在本次测试中。",
+        "interest_missing": "请至少填写一个联系方式。",
     },
 }
 
@@ -451,6 +512,27 @@ def metric_card(label, value, help_text):
     st.caption(help_text)
 
 
+def save_interest_lead(lang_code, contact, role, price, note):
+    is_new = not LEADS_PATH.exists()
+    with LEADS_PATH.open("a", newline="", encoding="utf-8") as file:
+        writer = csv.DictWriter(
+            file,
+            fieldnames=["created_at", "lang", "contact", "role", "price", "note"],
+        )
+        if is_new:
+            writer.writeheader()
+        writer.writerow(
+            {
+                "created_at": datetime.now(timezone.utc).isoformat(),
+                "lang": lang_code,
+                "contact": contact,
+                "role": role,
+                "price": price,
+                "note": note,
+            }
+        )
+
+
 def render_landing(lang_code):
     landing = LANDING[lang_code]
     st.markdown(
@@ -481,21 +563,53 @@ def render_landing(lang_code):
                 unsafe_allow_html=True,
             )
 
-    with st.expander(landing["sample_title"], expanded=False):
-        sample_score_col, sample_text_col = st.columns([0.65, 1.35], gap="large")
-        with sample_score_col:
-            st.metric("Score", landing["sample_score"])
-            for item in landing["sample_metrics"]:
-                st.caption(item)
-        with sample_text_col:
-            for item in landing["sample_feedback"]:
-                st.markdown(f"- {item}")
+    st.markdown(f"#### {landing['report_title']}")
+    st.caption(landing["report_summary"])
+    report_cols = st.columns([0.7, 1.3], gap="large")
+    with report_cols[0]:
+        st.metric("Score", landing["sample_score"])
+        for item in landing["sample_metrics"]:
+            st.caption(item)
+    with report_cols[1]:
+        for title, body in landing["report_sections"]:
+            st.markdown(
+                f"""
+                <div class="report-row">
+                    <strong>{title}</strong>
+                    <p>{body}</p>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
 
     st.markdown(f"#### {landing['questions_title']}")
     q_cols = st.columns([1, 1])
     for index, question in enumerate(landing["questions"]):
         with q_cols[index % 2]:
             st.markdown(f"- {question}")
+
+    st.markdown(f"#### {landing['interest_title']}")
+    st.caption(landing["interest_text"])
+    contact = st.text_input(landing["interest_email"], key=f"interest_contact_{lang_code}")
+    role = st.selectbox(landing["interest_role"], landing["interest_roles"], key=f"interest_role_{lang_code}")
+    price = st.selectbox(landing["interest_price"], landing["interest_prices"], key=f"interest_price_{lang_code}")
+    note = st.text_area(landing["interest_note"], height=90, key=f"interest_note_{lang_code}")
+    submitted = st.button(landing["interest_submit"], type="primary", key=f"interest_submit_{lang_code}")
+
+    if submitted:
+        if not contact.strip():
+            st.warning(landing["interest_missing"])
+        else:
+            save_interest_lead(lang_code, contact.strip(), role, price, note.strip())
+            st.success(landing["interest_success"])
+
+            contact_email = get_secret("CONTACT_EMAIL")
+            if contact_email:
+                subject = quote("Basketball AI Coach interest")
+                body = quote(
+                    f"Contact: {contact}\nRole: {role}\nPrice: {price}\nNeed: {note}"
+                )
+                st.markdown(f"[Send follow-up email](mailto:{contact_email}?subject={subject}&body={body})")
 
     st.divider()
 
@@ -604,6 +718,15 @@ st.markdown(
     .market-card p {
         opacity: 0.78;
         margin: 0;
+    }
+    .report-row {
+        border-left: 3px solid #ff4b4b;
+        padding: 0.15rem 0 0.35rem 0.75rem;
+        margin-bottom: 0.55rem;
+    }
+    .report-row p {
+        margin: 0.2rem 0 0;
+        opacity: 0.78;
     }
     </style>
     """,
