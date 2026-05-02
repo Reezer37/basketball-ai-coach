@@ -27,7 +27,21 @@ TEXT = {
         "settings": "Session setup",
         "style_label": "Reference style",
         "mode_label": "Feedback mode",
+        "source_label": "Video source",
+        "source_record": "Record with phone camera",
+        "source_upload": "Upload existing video",
         "upload_label": "Upload shooting video",
+        "record_upload_label": "Record or choose a shooting video",
+        "record_hint": "On a phone, tap Upload and choose the camera/video option. On desktop, upload a saved video file.",
+        "record_checklist_title": "Before recording, check this:",
+        "record_checklist": """
+- Film 3-8 seconds, one complete shot only
+- Use landscape or portrait, but keep the full body visible
+- Stand 2-4 meters from the camera
+- Best angle: side view or about 45 degrees
+- Keep feet, knees, shooting hand, and follow-through in frame
+- Good light, steady phone, no slow-motion or edits
+""",
         "api_settings": "AI API settings",
         "api_settings_help": "For local testing only. Keys are used for this session and are not saved in code.",
         "provider_label": "AI provider",
@@ -102,7 +116,21 @@ Please upload a short, clear shooting clip:
         "settings": "Analyse starten",
         "style_label": "Referenzstil",
         "mode_label": "Berichtsart",
+        "source_label": "Videoquelle",
+        "source_record": "Mit dem Handy aufnehmen",
+        "source_upload": "Vorhandenes Video hochladen",
         "upload_label": "Wurfvideo hochladen",
+        "record_upload_label": "Wurfvideo aufnehmen oder auswählen",
+        "record_hint": "Am Handy auf Upload tippen und Kamera/Video auswählen. Am Computer kannst du eine gespeicherte Videodatei hochladen.",
+        "record_checklist_title": "Vor dem Aufnehmen kurz prüfen:",
+        "record_checklist": """
+- 3-8 Sekunden filmen, nur einen vollständigen Wurf
+- Querformat oder Hochformat ist okay, aber der ganze Körper muss sichtbar bleiben
+- Kamera etwa 2-4 Meter entfernt platzieren
+- Beste Perspektive: Seitenansicht oder etwa 45 Grad
+- Füße, Knie, Wurfhand und Follow-through bleiben im Bild
+- Gute Beleuchtung, ruhiges Handy, keine Zeitlupe oder Schnitte
+""",
         "api_settings": "AI API Einstellungen",
         "api_settings_help": "Nur für lokale Tests. Keys werden nicht im Code gespeichert.",
         "provider_label": "AI Dienst",
@@ -177,7 +205,21 @@ Bitte lade einen kurzen, klaren Wurfclip hoch:
         "settings": "本次分析设置",
         "style_label": "对标风格",
         "mode_label": "点评模式",
+        "source_label": "视频来源",
+        "source_record": "用手机现场拍摄",
+        "source_upload": "上传已有视频",
         "upload_label": "上传投篮视频",
+        "record_upload_label": "拍摄或选择投篮视频",
+        "record_hint": "在手机上点击上传，选择相机/视频拍摄；在电脑上可以上传已保存的视频文件。",
+        "record_checklist_title": "拍摄前请确认：",
+        "record_checklist": """
+- 拍 3-8 秒，只包含一次完整投篮
+- 横屏或竖屏都可以，但全身必须始终可见
+- 手机距离人大约 2-4 米
+- 最佳角度：侧面或约 45 度
+- 脚、膝盖、投篮手和随球动作都在画面里
+- 光线充足、手机稳定，不要慢动作或剪辑
+""",
         "api_settings": "AI API 设置",
         "api_settings_help": "仅用于本地测试。Key 只在本次会话中使用，不会保存到代码里。",
         "provider_label": "AI 服务",
@@ -714,7 +756,18 @@ with settings_col:
         format_func=lambda option: t["quick_label"] if option == "quick" else t["detailed_label"],
         horizontal=True,
     )
-    video = st.file_uploader(t["upload_label"], type=["mp4", "mov", "m4v"])
+    source = st.radio(
+        t["source_label"],
+        ["record", "upload"],
+        format_func=lambda option: t["source_record"] if option == "record" else t["source_upload"],
+        horizontal=True,
+    )
+    if source == "record":
+        st.info(f"**{t['record_checklist_title']}**\n{t['record_checklist']}")
+        st.caption(t["record_hint"])
+
+    upload_label = t["record_upload_label"] if source == "record" else t["upload_label"]
+    video = st.file_uploader(upload_label, type=["mp4", "mov", "m4v", "mpeg4"])
     if video is not None:
         uploaded_video_bytes = video.getvalue()
         if st.session_state.get("uploaded_video_bytes") != uploaded_video_bytes:
