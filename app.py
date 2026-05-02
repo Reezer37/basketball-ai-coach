@@ -43,6 +43,7 @@ TEXT = {
 - Best angle: side view or about 45 degrees
 - Keep feet, knees, shooting hand, and follow-through in frame
 - Good light, steady phone, no slow-motion or edits
+- If upload fails, record a shorter 1080p clip instead of 4K/HDR
 """,
         "api_settings": "AI API settings",
         "api_settings_help": "For local testing only. Keys are used for this session and are not saved in code.",
@@ -54,7 +55,7 @@ TEXT = {
         "gemini_key_label": "Gemini API key",
         "model_label": "Model override (optional)",
         "missing_key": "Add an API key in AI API settings before generating coach feedback.",
-        "file_too_large": "This video is too large. Please upload a file up to {max_mb} MB.",
+        "file_too_large": "This video is too large. Please upload a file up to {max_mb} MB. If you recorded on a phone, use a shorter clip or 1080p instead of 4K/HDR.",
         "unsupported_file": "Please choose a video file. Photos or unsupported files cannot be analyzed.",
         "cooldown": "Please wait {seconds} more seconds before starting another analysis.",
         "start_label": "Start analysis",
@@ -138,6 +139,7 @@ Please upload a short, clear shooting clip:
 - Beste Perspektive: Seitenansicht oder etwa 45 Grad
 - Füße, Knie, Wurfhand und Follow-through bleiben im Bild
 - Gute Beleuchtung, ruhiges Handy, keine Zeitlupe oder Schnitte
+- Wenn der Upload nicht klappt: kürzer filmen und 1080p statt 4K/HDR nutzen
 """,
         "api_settings": "AI API Einstellungen",
         "api_settings_help": "Nur für lokale Tests. Keys werden nicht im Code gespeichert.",
@@ -149,7 +151,7 @@ Please upload a short, clear shooting clip:
         "gemini_key_label": "Gemini API key",
         "model_label": "Modell überschreiben (optional)",
         "missing_key": "Bitte zuerst einen API key konfigurieren, um Coach-Feedback zu erzeugen.",
-        "file_too_large": "Dieses Video ist zu groß. Bitte lade maximal {max_mb} MB hoch.",
+        "file_too_large": "Dieses Video ist zu groß. Bitte lade maximal {max_mb} MB hoch. Wenn du am Handy filmst, nutze einen kürzeren Clip oder 1080p statt 4K/HDR.",
         "unsupported_file": "Bitte wähle eine Videodatei aus. Fotos oder nicht unterstützte Dateien können nicht analysiert werden.",
         "cooldown": "Bitte warte noch {seconds} Sekunden, bevor du die nächste Analyse startest.",
         "start_label": "Analyse starten",
@@ -233,6 +235,7 @@ Bitte lade einen kurzen, klaren Wurfclip hoch:
 - 最佳角度：侧面或约 45 度
 - 脚、膝盖、投篮手和随球动作都在画面里
 - 光线充足、手机稳定，不要慢动作或剪辑
+- 如果无法上传，请缩短视频，使用 1080p 而不是 4K/HDR
 """,
         "api_settings": "AI API 设置",
         "api_settings_help": "仅用于本地测试。Key 只在本次会话中使用，不会保存到代码里。",
@@ -244,7 +247,7 @@ Bitte lade einen kurzen, klaren Wurfclip hoch:
         "gemini_key_label": "Gemini API key",
         "model_label": "模型覆盖（可选）",
         "missing_key": "请先在 AI API 设置中填写 API key，再生成教练点评。",
-        "file_too_large": "这个视频文件太大。请上传不超过 {max_mb} MB 的视频。",
+        "file_too_large": "这个视频文件太大。请上传不超过 {max_mb} MB 的视频。如果用手机拍摄，请缩短视频，或使用 1080p 而不是 4K/HDR。",
         "unsupported_file": "请选择视频文件。照片或不支持的文件无法分析。",
         "cooldown": "请再等待 {seconds} 秒后开始下一次分析。",
         "start_label": "开始分析",
@@ -764,7 +767,7 @@ language_label = st.selectbox(
 )
 lang_code = LANG_OPTIONS[language_label]
 t = TEXT[lang_code]
-max_upload_mb = get_int_secret("MAX_UPLOAD_MB", 80, 1, 200)
+max_upload_mb = get_int_secret("MAX_UPLOAD_MB", 180, 1, 500)
 analysis_cooldown_seconds = get_int_secret("ANALYSIS_COOLDOWN_SECONDS", 20, 0, 300)
 ai_max_output_tokens = get_int_secret("AI_COACH_MAX_OUTPUT_TOKENS", 650, 128, 1000)
 
