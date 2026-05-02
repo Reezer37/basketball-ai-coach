@@ -71,6 +71,8 @@ TEXT = {
         "result_invalid": "The result file is incomplete or unreadable.",
         "analysis_timeout": "Analysis took too long and was stopped.",
         "quality_title": "This video could not be analyzed reliably.",
+        "not_shot_title": "This does not look like a basketball shooting clip.",
+        "not_shot_guidance": "Please upload one clear basketball shot. The player should raise the shooting hand above the shoulder/head and complete the release and follow-through in frame.",
         "quality_guidance": """
 Please upload a short, clear shooting clip:
 - 3-8 seconds, no edits, cuts, or slow-motion effects
@@ -164,6 +166,8 @@ Please upload a short, clear shooting clip:
         "result_invalid": "Die Ergebnisdatei ist unvollständig oder nicht lesbar.",
         "analysis_timeout": "Die Analyse hat zu lange gedauert und wurde gestoppt.",
         "quality_title": "Dieses Video konnte nicht zuverlässig analysiert werden.",
+        "not_shot_title": "Das sieht nicht wie ein Basketball-Wurfclip aus.",
+        "not_shot_guidance": "Bitte lade einen klaren Basketballwurf hoch. Die Wurfhand sollte über Schulter/Kopf geführt werden, mit Release und Follow-through im Bild.",
         "quality_guidance": """
 Bitte lade einen kurzen, klaren Wurfclip hoch:
 - 3-8 Sekunden, ohne Schnitte, Übergänge oder Zeitlupe
@@ -257,6 +261,8 @@ Bitte lade einen kurzen, klaren Wurfclip hoch:
         "result_invalid": "结果文件不完整或无法读取。",
         "analysis_timeout": "分析时间过长，已停止处理。",
         "quality_title": "这段视频无法被稳定分析。",
+        "not_shot_title": "这看起来不像篮球投篮视频。",
+        "not_shot_guidance": "请上传一段清楚的篮球投篮视频：投篮手需要举到肩膀/头部以上，并在画面中完成出手和随球动作。",
         "quality_guidance": """
 请上传一段更适合动作识别的投篮视频：
 - 时长 3-8 秒，不要剪辑、转场或慢动作特效
@@ -537,6 +543,11 @@ def show_video_quality_guidance():
     st.info(t["quality_guidance"])
 
 
+def show_not_shot_guidance():
+    st.error(t["not_shot_title"])
+    st.info(t["not_shot_guidance"])
+
+
 def show_limited_analysis_guidance():
     st.warning(t["limited_title"])
     st.info(t["limited_guidance"])
@@ -804,7 +815,11 @@ with settings_col:
         st.caption(t["record_hint"])
 
     upload_label = t["record_upload_label"] if source == "record" else t["upload_label"]
-    video = st.file_uploader(upload_label, help=t["upload_help"])
+    video = st.file_uploader(
+        upload_label,
+        type=["mp4", "mov", "m4v", "mpeg4", "webm", "3gp", "3gpp"],
+        help=t["upload_help"],
+    )
     if video is not None:
         uploaded_video_bytes = video.getvalue()
         max_upload_bytes = max_upload_mb * 1024 * 1024
@@ -917,8 +932,11 @@ if st.button(t["start_label"], type="primary", disabled=not can_analyze, use_con
                 analysis = None
 
             if analysis_error_key is None and analysis.returncode != 0:
-                fallback_analysis = True
                 analysis_debug = (analysis.stdout or "") + "\n" + (analysis.stderr or "")
+                if "NO_SHOOTING_MOTION" in analysis_debug:
+                    analysis_error_key = "not_shot_video"
+                else:
+                    fallback_analysis = True
 
             if analysis_error_key is None and not fallback_analysis:
                 try:
@@ -936,7 +954,11 @@ if st.button(t["start_label"], type="primary", disabled=not can_analyze, use_con
         if not analysis_ok:
             if analysis_error_key == "analysis_timeout":
                 st.error(t["analysis_timeout"])
-            show_video_quality_guidance()
+            elif analysis_error_key == "not_shot_video":
+                show_not_shot_guidance()
+            else:
+                show_video_quality_guidance()
+            show_debug_details(analysis_debug)
             st.session_state["analysis_error_key"] = analysis_error_key
             st.stop()
 

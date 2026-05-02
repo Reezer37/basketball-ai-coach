@@ -206,6 +206,7 @@ dip_data = None
 
 frame_index = 0
 pose_frames = 0
+pose_motion = []
 
 with create_pose_detector() as pose:
     for frame in chain([first_frame], frames):
@@ -224,10 +225,29 @@ with create_pose_detector() as pose:
             lm = landmarks
 
             wrist = lm[RIGHT_WRIST]
+            elbow = lm[RIGHT_ELBOW]
+            shoulder = lm[RIGHT_SHOULDER]
             hip = lm[RIGHT_HIP]
+            nose = lm[NOSE]
 
             wrist_y = wrist.y * h
             hip_y = hip.y * h
+            elbow_y = elbow.y * h
+            shoulder_y = shoulder.y * h
+            nose_y = nose.y * h
+            release_height_now = nose_y - wrist_y
+
+            pose_motion.append(
+                {
+                    "frame_index": frame_index,
+                    "wrist_y": wrist_y,
+                    "elbow_y": elbow_y,
+                    "shoulder_y": shoulder_y,
+                    "nose_y": nose_y,
+                    "hip_y": hip_y,
+                    "release_height": release_height_now,
+                }
+            )
 
             # 出手瞬间：用手腕最高点近似
             if wrist_y < best_wrist_y:
@@ -257,6 +277,26 @@ print("检测到人体姿态的帧数:", pose_frames)
 if not release_data or not dip_data:
     print("没有检测到完整人体动作")
     exit(1)
+
+detected_ratio = pose_frames / max(frame_index, 1)
+lowest_wrist_y = max((item["wrist_y"] for item in pose_motion), default=best_wrist_y)
+wrist_lift = lowest_wrist_y - best_wrist_y
+release_frame_motion = next(
+    (item for item in pose_motion if item["frame_index"] == release_data["frame_index"]),
+    None,
+)
+release_above_head = bool(release_frame_motion and release_frame_motion["release_height"] > 0.03 * video_height)
+release_above_shoulder = bool(
+    release_frame_motion and release_frame_motion["wrist_y"] < release_frame_motion["shoulder_y"] - 0.04 * video_height
+)
+enough_lift = wrist_lift > 0.12 * video_height
+
+if detected_ratio < 0.2 or not enough_lift or not (release_above_head or release_above_shoulder):
+    print("NO_SHOOTING_MOTION")
+    print("没有识别到清晰的投篮出手动作")
+    print(f"姿态检测比例: {detected_ratio:.2f}")
+    print(f"手腕上升距离: {wrist_lift:.1f}px")
+    exit(3)
 
 # ===== 出手瞬间数据 =====
 frame = release_data["frame"]
