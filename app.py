@@ -954,7 +954,7 @@ if st.button(t["start_label"], type="primary", disabled=not can_analyze, use_con
                 show_not_shot_guidance()
             else:
                 show_video_quality_guidance()
-            show_debug_details(analysis_debug)
+                show_debug_details(analysis_debug)
             st.session_state["analysis_error_key"] = analysis_error_key
             st.stop()
 
