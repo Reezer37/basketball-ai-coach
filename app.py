@@ -33,7 +33,7 @@ TEXT = {
         "source_upload": "Upload existing video",
         "upload_label": "Upload shooting video",
         "record_upload_label": "Record or choose a shooting video",
-        "record_hint": "On a phone, tap Upload and choose the camera/video option. On desktop, upload a saved video file.",
+        "record_hint": "On a phone, tap Upload and choose either record video or choose an existing video. On desktop, upload a saved video file.",
         "upload_help": "The button may still say Upload. On phones, it opens the camera or photo/video library.",
         "record_checklist_title": "Before recording, check this:",
         "record_checklist": """
@@ -129,7 +129,7 @@ Please upload a short, clear shooting clip:
         "source_upload": "Vorhandenes Video hochladen",
         "upload_label": "Wurfvideo hochladen",
         "record_upload_label": "Wurfvideo aufnehmen oder auswählen",
-        "record_hint": "Am Handy auf Upload tippen und Kamera/Video auswählen. Am Computer kannst du eine gespeicherte Videodatei hochladen.",
+        "record_hint": "Am Handy auf Upload tippen und entweder Video aufnehmen oder ein vorhandenes Video auswählen. Am Computer kannst du eine gespeicherte Videodatei hochladen.",
         "upload_help": "Der Button kann weiterhin Upload heißen. Am Handy öffnet er Kamera oder Foto-/Videomediathek.",
         "record_checklist_title": "Vor dem Aufnehmen kurz prüfen:",
         "record_checklist": """
@@ -225,7 +225,7 @@ Bitte lade einen kurzen, klaren Wurfclip hoch:
         "source_upload": "上传已有视频",
         "upload_label": "上传投篮视频",
         "record_upload_label": "拍摄或选择投篮视频",
-        "record_hint": "在手机上点击上传，选择相机/视频拍摄；在电脑上可以上传已保存的视频文件。",
+        "record_hint": "在手机上点击 Upload 后，选择录像或选择已有视频；在电脑上可以上传已保存的视频文件。",
         "upload_help": "按钮可能仍显示 Upload，这是手机浏览器打开相机或照片/视频库的入口。",
         "record_checklist_title": "拍摄前请确认：",
         "record_checklist": """
@@ -807,17 +807,10 @@ with settings_col:
         format_func=lambda option: t["quick_label"] if option == "quick" else t["detailed_label"],
         horizontal=True,
     )
-    source = st.radio(
-        t["source_label"],
-        ["record", "upload"],
-        format_func=lambda option: t["source_record"] if option == "record" else t["source_upload"],
-        horizontal=True,
-    )
-    if source == "record":
-        st.info(f"**{t['record_checklist_title']}**\n{t['record_checklist']}")
-        st.caption(t["record_hint"])
+    st.info(f"**{t['record_checklist_title']}**\n{t['record_checklist']}")
+    st.caption(t["record_hint"])
 
-    upload_label = t["record_upload_label"] if source == "record" else t["upload_label"]
+    upload_label = t["record_upload_label"]
     video = st.file_uploader(
         upload_label,
         type=["mp4", "mov", "m4v", "mpeg4", "webm", "3gp", "3gpp"],
