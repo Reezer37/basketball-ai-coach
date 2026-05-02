@@ -34,6 +34,7 @@ TEXT = {
         "upload_label": "Upload shooting video",
         "record_upload_label": "Record or choose a shooting video",
         "record_hint": "On a phone, tap Upload and choose the camera/video option. On desktop, upload a saved video file.",
+        "upload_help": "The button may still say Upload. On phones, it opens the camera or photo/video library.",
         "record_checklist_title": "Before recording, check this:",
         "record_checklist": """
 - Film 3-8 seconds, one complete shot only
@@ -54,6 +55,7 @@ TEXT = {
         "model_label": "Model override (optional)",
         "missing_key": "Add an API key in AI API settings before generating coach feedback.",
         "file_too_large": "This video is too large. Please upload a file up to {max_mb} MB.",
+        "unsupported_file": "Please choose a video file. Photos or unsupported files cannot be analyzed.",
         "cooldown": "Please wait {seconds} more seconds before starting another analysis.",
         "start_label": "Start analysis",
         "quick_label": "Quick feedback",
@@ -125,6 +127,7 @@ Please upload a short, clear shooting clip:
         "upload_label": "Wurfvideo hochladen",
         "record_upload_label": "Wurfvideo aufnehmen oder auswählen",
         "record_hint": "Am Handy auf Upload tippen und Kamera/Video auswählen. Am Computer kannst du eine gespeicherte Videodatei hochladen.",
+        "upload_help": "Der Button kann weiterhin Upload heißen. Am Handy öffnet er Kamera oder Foto-/Videomediathek.",
         "record_checklist_title": "Vor dem Aufnehmen kurz prüfen:",
         "record_checklist": """
 - 3-8 Sekunden filmen, nur einen vollständigen Wurf
@@ -145,6 +148,7 @@ Please upload a short, clear shooting clip:
         "model_label": "Modell überschreiben (optional)",
         "missing_key": "Bitte zuerst einen API key konfigurieren, um Coach-Feedback zu erzeugen.",
         "file_too_large": "Dieses Video ist zu groß. Bitte lade maximal {max_mb} MB hoch.",
+        "unsupported_file": "Bitte wähle eine Videodatei aus. Fotos oder nicht unterstützte Dateien können nicht analysiert werden.",
         "cooldown": "Bitte warte noch {seconds} Sekunden, bevor du die nächste Analyse startest.",
         "start_label": "Analyse starten",
         "quick_label": "Kurzfeedback",
@@ -216,6 +220,7 @@ Bitte lade einen kurzen, klaren Wurfclip hoch:
         "upload_label": "上传投篮视频",
         "record_upload_label": "拍摄或选择投篮视频",
         "record_hint": "在手机上点击上传，选择相机/视频拍摄；在电脑上可以上传已保存的视频文件。",
+        "upload_help": "按钮可能仍显示 Upload，这是手机浏览器打开相机或照片/视频库的入口。",
         "record_checklist_title": "拍摄前请确认：",
         "record_checklist": """
 - 拍 3-8 秒，只包含一次完整投篮
@@ -236,6 +241,7 @@ Bitte lade einen kurzen, klaren Wurfclip hoch:
         "model_label": "模型覆盖（可选）",
         "missing_key": "请先在 AI API 设置中填写 API key，再生成教练点评。",
         "file_too_large": "这个视频文件太大。请上传不超过 {max_mb} MB 的视频。",
+        "unsupported_file": "请选择视频文件。照片或不支持的文件无法分析。",
         "cooldown": "请再等待 {seconds} 秒后开始下一次分析。",
         "start_label": "开始分析",
         "quick_label": "快速点评",
@@ -455,6 +461,13 @@ def get_int_secret(name, default, min_value=None, max_value=None):
     if max_value is not None:
         value = min(max_value, value)
     return value
+
+
+def is_supported_video(uploaded_file):
+    mime_type = (getattr(uploaded_file, "type", "") or "").lower()
+    filename = (getattr(uploaded_file, "name", "") or "").lower()
+    video_extensions = (".mp4", ".mov", ".m4v", ".mpeg4", ".webm", ".3gp", ".3gpp")
+    return mime_type.startswith("video/") or filename.endswith(video_extensions)
 
 
 def calculate_score(metrics):
@@ -791,11 +804,17 @@ with settings_col:
         st.caption(t["record_hint"])
 
     upload_label = t["record_upload_label"] if source == "record" else t["upload_label"]
-    video = st.file_uploader(upload_label, type=["mp4", "mov", "m4v", "mpeg4"])
+    video = st.file_uploader(upload_label, help=t["upload_help"])
     if video is not None:
         uploaded_video_bytes = video.getvalue()
         max_upload_bytes = max_upload_mb * 1024 * 1024
-        if len(uploaded_video_bytes) > max_upload_bytes:
+        if not is_supported_video(video):
+            clear_previous_analysis()
+            st.session_state.pop("uploaded_video_bytes", None)
+            st.session_state.pop("uploaded_video_name", None)
+            current_video_bytes = None
+            st.error(t["unsupported_file"])
+        elif len(uploaded_video_bytes) > max_upload_bytes:
             clear_previous_analysis()
             st.session_state.pop("uploaded_video_bytes", None)
             st.session_state.pop("uploaded_video_name", None)
