@@ -6,12 +6,45 @@ from pathlib import Path
 from urllib import error, request
 
 from google import genai
+from google.genai import types
 
 
 BASE_DIR = Path(__file__).resolve().parent
 DEFAULT_PROVIDER = os.getenv("AI_COACH_PROVIDER", "auto").lower()
 DEFAULT_GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.5-flash-lite")
 DEFAULT_OPENAI_MODEL = os.getenv("OPENAI_MODEL", "gpt-4.1-mini")
+
+
+def get_int_env(name, default, min_value=None, max_value=None):
+    raw_value = os.getenv(name)
+    try:
+        value = int(raw_value) if raw_value else default
+    except ValueError:
+        value = default
+
+    if min_value is not None:
+        value = max(min_value, value)
+    if max_value is not None:
+        value = min(max_value, value)
+    return value
+
+
+def get_float_env(name, default, min_value=None, max_value=None):
+    raw_value = os.getenv(name)
+    try:
+        value = float(raw_value) if raw_value else default
+    except ValueError:
+        value = default
+
+    if min_value is not None:
+        value = max(min_value, value)
+    if max_value is not None:
+        value = min(max_value, value)
+    return value
+
+
+DEFAULT_MAX_OUTPUT_TOKENS = get_int_env("AI_COACH_MAX_OUTPUT_TOKENS", 650, 128, 1000)
+DEFAULT_TEMPERATURE = get_float_env("AI_COACH_TEMPERATURE", 0.35, 0.0, 1.0)
 
 
 def load_metrics(result_path):
@@ -486,7 +519,7 @@ def pick_provider(provider):
     )
 
 
-def generate_with_gemini(prompt, model):
+def generate_with_gemini(prompt, model, max_output_tokens, temperature):
     api_key = os.getenv("GEMINI_API_KEY")
     if not api_key:
         raise RuntimeError("GEMINI_API_KEY is not set.")
@@ -495,6 +528,10 @@ def generate_with_gemini(prompt, model):
     response = client.models.generate_content(
         model=model,
         contents=prompt,
+        config=types.GenerateContentConfig(
+            max_output_tokens=max_output_tokens,
+            temperature=temperature,
+        ),
     )
     return response.text or ""
 
@@ -511,7 +548,7 @@ def extract_openai_text(payload):
     return "\n".join(chunks)
 
 
-def generate_with_openai(prompt, model):
+def generate_with_openai(prompt, model, max_output_tokens, temperature):
     api_key = os.getenv("OPENAI_API_KEY")
     if not api_key:
         raise RuntimeError("OPENAI_API_KEY is not set.")
@@ -520,6 +557,8 @@ def generate_with_openai(prompt, model):
         {
             "model": model,
             "input": prompt,
+            "max_output_tokens": max_output_tokens,
+            "temperature": temperature,
         }
     ).encode("utf-8")
 
@@ -543,16 +582,16 @@ def generate_with_openai(prompt, model):
     return extract_openai_text(payload)
 
 
-def generate_feedback(prompt, provider, model):
+def generate_feedback(prompt, provider, model, max_output_tokens, temperature):
     selected_provider = pick_provider(provider)
 
     if selected_provider == "gemini":
         selected_model = model or DEFAULT_GEMINI_MODEL
-        return generate_with_gemini(prompt, selected_model)
+        return generate_with_gemini(prompt, selected_model, max_output_tokens, temperature)
 
     if selected_provider == "openai":
         selected_model = model or DEFAULT_OPENAI_MODEL
-        return generate_with_openai(prompt, selected_model)
+        return generate_with_openai(prompt, selected_model, max_output_tokens, temperature)
 
     raise RuntimeError("AI_COACH_PROVIDER must be auto, gemini, or openai.")
 
@@ -565,7 +604,11 @@ parser.add_argument("--provider", default=DEFAULT_PROVIDER, choices=["auto", "ge
 parser.add_argument("--model", default="")
 parser.add_argument("--result", default=str(BASE_DIR / "result.txt"))
 parser.add_argument("--fallback", action="store_true")
+parser.add_argument("--max_output_tokens", type=int, default=DEFAULT_MAX_OUTPUT_TOKENS)
+parser.add_argument("--temperature", type=float, default=DEFAULT_TEMPERATURE)
 args = parser.parse_args()
+max_output_tokens = max(128, min(args.max_output_tokens, 1000))
+temperature = max(0.0, min(args.temperature, 1.0))
 
 if args.fallback:
     prompt = build_fallback_prompt(args.mode, args.player_model, args.lang)
@@ -588,7 +631,7 @@ heading = {
 print(status_text, flush=True)
 
 try:
-    feedback = generate_feedback(prompt, args.provider, args.model)
+    feedback = generate_feedback(prompt, args.provider, args.model, max_output_tokens, temperature)
 except RuntimeError as exc:
     print(str(exc), file=sys.stderr)
     sys.exit(1)

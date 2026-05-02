@@ -38,6 +38,9 @@ AI_COACH_PROVIDER = "openai"
 OPENAI_API_KEY = "your-openai-api-key"
 AI_COACH_MODEL = "gpt-4.1-mini"
 SHOW_API_SETTINGS = "false"
+AI_COACH_MAX_OUTPUT_TOKENS = "650"
+MAX_UPLOAD_MB = "80"
+ANALYSIS_COOLDOWN_SECONDS = "20"
 ```
 
 For Gemini instead:
@@ -47,7 +50,14 @@ AI_COACH_PROVIDER = "gemini"
 GEMINI_API_KEY = "your-gemini-api-key"
 AI_COACH_MODEL = "gemini-2.5-flash-lite"
 SHOW_API_SETTINGS = "false"
+AI_COACH_MAX_OUTPUT_TOKENS = "650"
+MAX_UPLOAD_MB = "80"
+ANALYSIS_COOLDOWN_SECONDS = "20"
 ```
+
+`AI_COACH_MAX_OUTPUT_TOKENS` caps the length of each coach response. `MAX_UPLOAD_MB`
+blocks very large videos before processing. `ANALYSIS_COOLDOWN_SECONDS` adds a small
+per-session delay between analysis attempts.
 
 ## 3. Deploy
 

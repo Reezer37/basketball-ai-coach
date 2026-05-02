@@ -3,6 +3,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import time
 from pathlib import Path
 
 import streamlit as st
@@ -52,6 +53,8 @@ TEXT = {
         "gemini_key_label": "Gemini API key",
         "model_label": "Model override (optional)",
         "missing_key": "Add an API key in AI API settings before generating coach feedback.",
+        "file_too_large": "This video is too large. Please upload a file up to {max_mb} MB.",
+        "cooldown": "Please wait {seconds} more seconds before starting another analysis.",
         "start_label": "Start analysis",
         "quick_label": "Quick feedback",
         "detailed_label": "Detailed report",
@@ -141,6 +144,8 @@ Please upload a short, clear shooting clip:
         "gemini_key_label": "Gemini API key",
         "model_label": "Modell überschreiben (optional)",
         "missing_key": "Bitte zuerst einen API key konfigurieren, um Coach-Feedback zu erzeugen.",
+        "file_too_large": "Dieses Video ist zu groß. Bitte lade maximal {max_mb} MB hoch.",
+        "cooldown": "Bitte warte noch {seconds} Sekunden, bevor du die nächste Analyse startest.",
         "start_label": "Analyse starten",
         "quick_label": "Kurzfeedback",
         "detailed_label": "Detailbericht",
@@ -230,6 +235,8 @@ Bitte lade einen kurzen, klaren Wurfclip hoch:
         "gemini_key_label": "Gemini API key",
         "model_label": "模型覆盖（可选）",
         "missing_key": "请先在 AI API 设置中填写 API key，再生成教练点评。",
+        "file_too_large": "这个视频文件太大。请上传不超过 {max_mb} MB 的视频。",
+        "cooldown": "请再等待 {seconds} 秒后开始下一次分析。",
         "start_label": "开始分析",
         "quick_label": "快速点评",
         "detailed_label": "深度报告",
@@ -434,6 +441,20 @@ def get_secret(name, default=""):
         return st.secrets.get(name, default)
     except Exception:
         return default
+
+
+def get_int_secret(name, default, min_value=None, max_value=None):
+    raw_value = get_secret(name, str(default))
+    try:
+        value = int(raw_value)
+    except (TypeError, ValueError):
+        value = default
+
+    if min_value is not None:
+        value = max(min_value, value)
+    if max_value is not None:
+        value = min(max_value, value)
+    return value
 
 
 def calculate_score(metrics):
@@ -719,6 +740,9 @@ language_label = st.selectbox(
 )
 lang_code = LANG_OPTIONS[language_label]
 t = TEXT[lang_code]
+max_upload_mb = get_int_secret("MAX_UPLOAD_MB", 80, 1, 200)
+analysis_cooldown_seconds = get_int_secret("ANALYSIS_COOLDOWN_SECONDS", 20, 0, 300)
+ai_max_output_tokens = get_int_secret("AI_COACH_MAX_OUTPUT_TOKENS", 650, 128, 1000)
 
 render_landing(lang_code)
 
@@ -770,11 +794,19 @@ with settings_col:
     video = st.file_uploader(upload_label, type=["mp4", "mov", "m4v", "mpeg4"])
     if video is not None:
         uploaded_video_bytes = video.getvalue()
-        if st.session_state.get("uploaded_video_bytes") != uploaded_video_bytes:
+        max_upload_bytes = max_upload_mb * 1024 * 1024
+        if len(uploaded_video_bytes) > max_upload_bytes:
             clear_previous_analysis()
-        st.session_state["uploaded_video_bytes"] = uploaded_video_bytes
-        st.session_state["uploaded_video_name"] = video.name
-        current_video_bytes = uploaded_video_bytes
+            st.session_state.pop("uploaded_video_bytes", None)
+            st.session_state.pop("uploaded_video_name", None)
+            current_video_bytes = None
+            st.error(t["file_too_large"].format(max_mb=max_upload_mb))
+        else:
+            if st.session_state.get("uploaded_video_bytes") != uploaded_video_bytes:
+                clear_previous_analysis()
+            st.session_state["uploaded_video_bytes"] = uploaded_video_bytes
+            st.session_state["uploaded_video_name"] = video.name
+            current_video_bytes = uploaded_video_bytes
 
     provider = server_provider if server_provider in {"auto", "openai", "gemini"} else "auto"
     openai_key = ""
@@ -817,6 +849,15 @@ with media_col:
 can_analyze = current_video_bytes is not None
 
 if st.button(t["start_label"], type="primary", disabled=not can_analyze, use_container_width=True):
+    now = time.monotonic()
+    last_analysis_at = st.session_state.get("last_analysis_at", 0)
+    seconds_since_last_analysis = now - last_analysis_at
+    if seconds_since_last_analysis < analysis_cooldown_seconds:
+        wait_seconds = int(analysis_cooldown_seconds - seconds_since_last_analysis) + 1
+        st.warning(t["cooldown"].format(seconds=wait_seconds))
+        st.stop()
+
+    st.session_state["last_analysis_at"] = now
     clear_previous_analysis()
     work_dir = tempfile.mkdtemp(prefix="basketball-ai-coach-")
     try:
@@ -954,6 +995,8 @@ if st.button(t["start_label"], type="primary", disabled=not can_analyze, use_con
             provider,
             "--result",
             str(result_path),
+            "--max_output_tokens",
+            str(ai_max_output_tokens),
         ]
         if model_override.strip():
             coach_command.extend(["--model", model_override.strip()])
