@@ -659,7 +659,11 @@ def show_limited_analysis_guidance():
 
 
 def show_debug_details(details):
-    if get_secret("SHOW_DEBUG_DETAILS", "false").lower() == "true" and details:
+    if (
+        get_secret("SHOW_DEBUG_DETAILS", "false").lower() == "true"
+        and get_secret("APP_ENV", "production").lower() == "development"
+        and details
+    ):
         with st.expander(t["debug_details"]):
             st.text(details[-2000:])
 
