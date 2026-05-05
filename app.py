@@ -540,9 +540,12 @@ def normalize_video_frame(frame, target_size):
 def combine_videos(video_paths, output_path, fps=25):
     target_size = None
     wrote_frame = False
+    segments = []
+    frame_index = 0
 
     with imageio.get_writer(str(output_path), fps=fps, codec="libx264", macro_block_size=16) as writer:
         for video_path in video_paths:
+            segment_start = frame_index
             reader = imageio.get_reader(str(video_path))
             try:
                 for frame in reader:
@@ -550,11 +553,20 @@ def combine_videos(video_paths, output_path, fps=25):
                         target_size = (frame.shape[1], frame.shape[0])
                     writer.append_data(normalize_video_frame(frame, target_size))
                     wrote_frame = True
+                    frame_index += 1
             finally:
                 reader.close()
+            segments.append(
+                {
+                    "name": video_path.name,
+                    "start_frame": segment_start,
+                    "end_frame": frame_index,
+                }
+            )
 
     if not wrote_frame:
         raise ValueError("No frames were found in uploaded videos.")
+    return segments
 
 
 def calculate_score(metrics):
@@ -1038,34 +1050,41 @@ if st.button(t["start_label"], type="primary", disabled=not can_analyze, use_con
         shot_path = work_path / "shot.mp4"
         result_path = work_path / "result.txt"
         stability_path = work_path / "stability.json"
+        segments_path = work_path / "segments.json"
         analyzed_image_path = work_path / "release_analyzed.jpg"
-        source_video_paths = []
-        for index, video_item in enumerate(current_videos):
-            suffix = Path(video_item["name"]).suffix or ".mp4"
-            source_path = work_path / f"source_{index}{suffix}"
-            source_path.write_bytes(video_item["bytes"])
-            source_video_paths.append(source_path)
-
-        if len(source_video_paths) == 1:
-            shot_path.write_bytes(source_video_paths[0].read_bytes())
-        else:
-            combine_videos(source_video_paths, shot_path)
 
         with st.spinner(t["spinner"]):
+            source_video_paths = []
+            for index, video_item in enumerate(current_videos):
+                suffix = Path(video_item["name"]).suffix or ".mp4"
+                source_path = work_path / f"source_{index}{suffix}"
+                source_path.write_bytes(video_item["bytes"])
+                source_video_paths.append(source_path)
+
+            if len(source_video_paths) == 1:
+                shot_path.write_bytes(source_video_paths[0].read_bytes())
+            else:
+                segments = combine_videos(source_video_paths, shot_path)
+                segments_path.write_text(json.dumps(segments), encoding="utf-8")
+
             try:
+                analysis_command = [
+                    sys.executable,
+                    "analyze_release.py",
+                    "--input",
+                    str(shot_path),
+                    "--output-image",
+                    str(analyzed_image_path),
+                    "--result",
+                    str(result_path),
+                    "--stability",
+                    str(stability_path),
+                ]
+                if segments_path.exists():
+                    analysis_command.extend(["--segments", str(segments_path)])
+
                 analysis = subprocess.run(
-                    [
-                        sys.executable,
-                        "analyze_release.py",
-                        "--input",
-                        str(shot_path),
-                        "--output-image",
-                        str(analyzed_image_path),
-                        "--result",
-                        str(result_path),
-                        "--stability",
-                        str(stability_path),
-                    ],
+                    analysis_command,
                     cwd=BASE_DIR,
                     capture_output=True,
                     text=True,

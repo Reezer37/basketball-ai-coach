@@ -63,12 +63,14 @@ parser.add_argument("--input", default="shot.mp4")
 parser.add_argument("--output-image", default="release_analyzed.jpg")
 parser.add_argument("--result", default="result.txt")
 parser.add_argument("--stability", default="")
+parser.add_argument("--segments", default="")
 args = parser.parse_args()
 
 input_video = args.input
 output_image = args.output_image
 result_path = args.result
 stability_path = args.stability
+segments_path = args.segments
 
 POSE_CONNECTIONS = [
     (11, 12),
@@ -265,6 +267,15 @@ def stddev(values):
     variance = sum((value - mean) ** 2 for value in values) / len(values)
     return math.sqrt(variance)
 
+
+def load_segments(path):
+    if not path:
+        return []
+    try:
+        return json.loads(Path(path).read_text(encoding="utf-8"))
+    except (json.JSONDecodeError, OSError):
+        return []
+
 try:
     frames = iio.imiter(input_video)
     first_frame = next(frames)
@@ -412,6 +423,29 @@ for index, record in enumerate(pose_records):
     release_candidates.append(record)
 
 shot_metrics = []
+segments = load_segments(segments_path)
+if segments:
+    grouped_candidates = []
+    for segment in segments:
+        segment_candidates = [
+            item
+            for item in release_candidates
+            if segment.get("start_frame", 0) <= item["frame_index"] < segment.get("end_frame", 0)
+        ]
+        if not segment_candidates:
+            segment_candidates = [
+                item
+                for item in pose_records
+                if segment.get("start_frame", 0) <= item["frame_index"] < segment.get("end_frame", 0)
+                and (
+                    item["release_height"] > 0.03 * video_height
+                    or item["wrist_y"] < item["shoulder_y"] - 0.04 * video_height
+                )
+            ]
+        if segment_candidates:
+            grouped_candidates.append(min(segment_candidates, key=lambda item: item["wrist_y"]))
+    release_candidates = grouped_candidates
+
 for candidate in release_candidates[:12]:
     dip_candidates = [
         item
