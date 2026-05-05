@@ -40,6 +40,7 @@ TEXT = {
         "record_checklist": """
 - Best result: film 5 or more shots in one clip
 - Fewer shots still work, but stability feedback will be less certain
+- Use the same player, camera angle, and distance for consistency analysis
 - Use landscape or portrait, but keep the full body visible
 - Stand 2-4 meters from the camera
 - Best angle: side view or about 45 degrees
@@ -102,6 +103,7 @@ Please upload a short, clear shooting clip:
         "stability_medium": "Medium",
         "stability_high": "High",
         "stability_limited": "Upload 5 or more shots for a more reliable consistency read. This result is still useful for a first look.",
+        "stability_merge_warning": "These shots may not share the same player, camera angle, or distance. Consistency results may be less reliable.",
         "stability_help": "This section compares repeated releases in the same clip. More shots make the pattern more trustworthy.",
         "coach_title": "AI coach feedback",
         "no_feedback": "No coach feedback was returned.",
@@ -146,6 +148,7 @@ Please upload a short, clear shooting clip:
         "record_checklist": """
 - Am besten 5 oder mehr Würfe in einem Clip filmen
 - Weniger Würfe funktionieren auch, aber die Stabilitätsanalyse ist dann unsicherer
+- Für die Stabilitätsanalyse gleiche Person, gleiche Perspektive und ähnliche Distanz nutzen
 - Querformat oder Hochformat ist okay, aber der ganze Körper muss sichtbar bleiben
 - Kamera etwa 2-4 Meter entfernt platzieren
 - Beste Perspektive: Seitenansicht oder etwa 45 Grad
@@ -208,6 +211,7 @@ Bitte lade einen kurzen, klaren Wurfclip hoch:
         "stability_medium": "Mittel",
         "stability_high": "Hoch",
         "stability_limited": "Lade 5 oder mehr Würfe hoch, um die Stabilität zuverlässiger einzuschätzen. Dieses Ergebnis ist trotzdem als erster Check nutzbar.",
+        "stability_merge_warning": "Diese Würfe wirken möglicherweise nicht wie gleiche Person, gleicher Kamerawinkel oder gleiche Distanz. Die Stabilitätswerte können dadurch unzuverlässiger sein.",
         "stability_help": "Dieser Bereich vergleicht wiederholte Releases im selben Clip. Mehr Würfe machen das Muster verlässlicher.",
         "coach_title": "AI Coach-Feedback",
         "no_feedback": "Es wurde kein Coach-Feedback zurückgegeben.",
@@ -252,6 +256,7 @@ Bitte lade einen kurzen, klaren Wurfclip hoch:
         "record_checklist": """
 - 最好在同一段视频里拍 5 次或更多投篮
 - 少于 5 次也可以分析，但稳定性判断会更不确定
+- 稳定性分析请尽量保持同一球员、同一角度和相似距离
 - 横屏或竖屏都可以，但全身必须始终可见
 - 手机距离人大约 2-4 米
 - 最佳角度：侧面或约 45 度
@@ -314,6 +319,7 @@ Bitte lade einen kurzen, klaren Wurfclip hoch:
         "stability_medium": "中",
         "stability_high": "高",
         "stability_limited": "上传 5 次或更多投篮可以获得更可靠的稳定性判断；当前结果仍可作为初步参考。",
+        "stability_merge_warning": "这些投篮可能不是同一球员、同一拍摄角度或相似距离，稳定性结果会更不可靠。",
         "stability_help": "这一单元会比较同一段视频里的多次出手。投篮次数越多，动作模式越可信。",
         "coach_title": "AI教练点评",
         "no_feedback": "没有返回教练点评。",
@@ -645,6 +651,8 @@ def render_stability(stability):
 
     if detected_shots < recommended_shots:
         st.info(t["stability_limited"])
+    if stability.get("consistency_check", {}).get("warning"):
+        st.warning(t["stability_merge_warning"])
 
 
 def render_landing(lang_code):

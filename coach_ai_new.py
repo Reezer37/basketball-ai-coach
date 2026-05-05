@@ -115,6 +115,8 @@ def build_stability_context(stability, lang):
     score = stability.get("stability_score")
     confidence = stability.get("confidence", "low")
     variability = stability.get("metric_variability", {})
+    consistency = stability.get("consistency_check", {})
+    consistency_warning = bool(consistency.get("warning"))
 
     score_text = "not available" if score is None else f"{score}/100"
     if lang == "de":
@@ -127,8 +129,10 @@ Zusatzdaten zur Wurfstabilität:
 - Verlässlichkeit: {confidence}
 - Streuung Ellbogenwinkel: {variability.get("elbow_angle_std", "n/a")}
 - Streuung Release-Höhe: {variability.get("release_height_std", "n/a")}
+- Hinweis zu gleicher Person/Perspektive: {"möglicherweise uneinheitlich" if consistency_warning else "keine deutliche Warnung"}
 
 Nutze diese Daten als wichtigen Abschnitt. Wenn weniger als {recommended_shots} Würfe erkannt wurden, klar sagen, dass die Stabilitätsaussage nur vorläufig ist.
+Wenn die gleiche Person/Perspektive möglicherweise uneinheitlich ist, erkläre, dass die Stabilitätswerte weniger zuverlässig sind, ohne Identitätserkennung zu behaupten.
 """
     if lang == "en":
         return f"""
@@ -140,8 +144,10 @@ Additional shot-consistency data:
 - Confidence: {confidence}
 - Elbow-angle variation: {variability.get("elbow_angle_std", "n/a")}
 - Release-height variation: {variability.get("release_height_std", "n/a")}
+- Same-player/camera consistency note: {"possibly inconsistent" if consistency_warning else "no clear warning"}
 
 Treat consistency as an important section. If fewer than {recommended_shots} shots were detected, clearly say the consistency read is preliminary.
+If same-player/camera consistency may be inconsistent, explain that the consistency numbers are less reliable without claiming identity recognition.
 """
     return f"""
 
@@ -152,8 +158,10 @@ Treat consistency as an important section. If fewer than {recommended_shots} sho
 - 判断可信度：{confidence}
 - 手肘角度波动：{variability.get("elbow_angle_std", "n/a")}
 - 出手高度波动：{variability.get("release_height_std", "n/a")}
+- 同一球员/拍摄条件提示：{"可能不一致" if consistency_warning else "没有明显警告"}
 
 请把稳定性作为重要分析单元。如果识别到的投篮次数少于 {recommended_shots} 次，需要明确说明稳定性判断只是初步参考。
+如果同一球员或拍摄条件可能不一致，请说明稳定性数值会更不可靠，但不要声称进行了身份识别。
 """
 
 

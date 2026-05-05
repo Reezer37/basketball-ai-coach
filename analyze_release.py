@@ -101,6 +101,9 @@ RIGHT_WRIST = 16
 RIGHT_HIP = 24
 RIGHT_KNEE = 26
 RIGHT_ANKLE = 28
+LEFT_SHOULDER = 11
+LEFT_HIP = 23
+LEFT_ANKLE = 27
 NOSE = 0
 
 
@@ -190,11 +193,14 @@ def calc_release_metrics(release_record, dip_record):
     h = release_record["height"]
 
     right_shoulder = lm[RIGHT_SHOULDER]
+    left_shoulder = lm[LEFT_SHOULDER]
     right_elbow = lm[RIGHT_ELBOW]
     right_wrist = lm[RIGHT_WRIST]
     right_hip = lm[RIGHT_HIP]
+    left_hip = lm[LEFT_HIP]
     right_knee = lm[RIGHT_KNEE]
     right_ankle = lm[RIGHT_ANKLE]
+    left_ankle = lm[LEFT_ANKLE]
     nose = lm[NOSE]
 
     s = (right_shoulder.x * w, right_shoulder.y * h)
@@ -226,6 +232,15 @@ def calc_release_metrics(release_record, dip_record):
     body_lean = (right_shoulder.x * w) - (right_hip.x * w)
     knee_extension = release_knee_angle - dip_knee_angle
     flow_frames = release_record["frame_index"] - dip_record["frame_index"]
+    body_points = [nose, left_shoulder, right_shoulder, left_hip, right_hip, left_ankle, right_ankle]
+    min_y = min(point.y * h for point in body_points)
+    max_y = max(point.y * h for point in body_points)
+    body_height_px = max(1.0, max_y - min_y)
+    body_center_x = (
+        left_shoulder.x * w + right_shoulder.x * w + left_hip.x * w + right_hip.x * w
+    ) / 4
+    shoulder_width_px = abs((left_shoulder.x - right_shoulder.x) * w)
+    hip_width_px = abs((left_hip.x - right_hip.x) * w)
 
     return {
         "frame_index": release_record["frame_index"],
@@ -236,6 +251,10 @@ def calc_release_metrics(release_record, dip_record):
         "release_knee_angle": release_knee_angle,
         "knee_extension": knee_extension,
         "flow_frames": flow_frames,
+        "body_center_x_norm": body_center_x / w,
+        "body_height_norm": body_height_px / h,
+        "shoulder_width_ratio": shoulder_width_px / body_height_px,
+        "hip_width_ratio": hip_width_px / body_height_px,
     }
 
 
@@ -411,6 +430,14 @@ shot_count = len(shot_metrics)
 stability_score = None
 stability_confidence = "low"
 metric_variability = {}
+consistency_check = {
+    "status": "limited",
+    "warning": False,
+    "position_std": 0.0,
+    "body_scale_std": 0.0,
+    "shoulder_ratio_std": 0.0,
+    "hip_ratio_std": 0.0,
+}
 
 if shot_count >= 2:
     metric_variability = {
@@ -428,10 +455,27 @@ if shot_count >= 2:
         + metric_variability["flow_frames_std"] / max(8, fps_value * 0.35)
     )
     stability_score = max(0, min(100, round(100 - variability_index * 20)))
+    consistency_check = {
+        "status": "consistent",
+        "warning": False,
+        "position_std": stddev([item["body_center_x_norm"] for item in shot_metrics]),
+        "body_scale_std": stddev([item["body_height_norm"] for item in shot_metrics]),
+        "shoulder_ratio_std": stddev([item["shoulder_width_ratio"] for item in shot_metrics]),
+        "hip_ratio_std": stddev([item["hip_width_ratio"] for item in shot_metrics]),
+    }
+    if (
+        consistency_check["position_std"] > 0.18
+        or consistency_check["body_scale_std"] > 0.12
+        or consistency_check["shoulder_ratio_std"] > 0.12
+        or consistency_check["hip_ratio_std"] > 0.10
+    ):
+        consistency_check["status"] = "inconsistent_capture"
+        consistency_check["warning"] = True
+        stability_confidence = "low"
 
-if shot_count >= 5:
+if shot_count >= 5 and not consistency_check["warning"]:
     stability_confidence = "high"
-elif shot_count >= 3:
+elif shot_count >= 3 and not consistency_check["warning"]:
     stability_confidence = "medium"
 
 stability_payload = {
@@ -439,6 +483,14 @@ stability_payload = {
     "recommended_shots": 5,
     "stability_score": stability_score,
     "confidence": stability_confidence,
+    "consistency_check": {
+        "status": consistency_check["status"],
+        "warning": consistency_check["warning"],
+        "position_std": round(consistency_check["position_std"], 3),
+        "body_scale_std": round(consistency_check["body_scale_std"], 3),
+        "shoulder_ratio_std": round(consistency_check["shoulder_ratio_std"], 3),
+        "hip_ratio_std": round(consistency_check["hip_ratio_std"], 3),
+    },
     "metric_variability": {key: round(value, 1) for key, value in metric_variability.items()},
     "shots": [
         {
@@ -448,6 +500,8 @@ stability_payload = {
             "body_lean": round(item["body_lean"], 1),
             "knee_extension": round(item["knee_extension"], 1),
             "flow_frames": int(item["flow_frames"]),
+            "body_center_x_norm": round(item["body_center_x_norm"], 3),
+            "body_height_norm": round(item["body_height_norm"], 3),
         }
         for item in shot_metrics
     ],
