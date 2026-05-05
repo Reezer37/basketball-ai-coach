@@ -37,12 +37,13 @@ TEXT = {
         "source_upload": "Upload existing video",
         "upload_label": "Upload shooting video",
         "record_upload_label": "Record or choose shooting videos",
-        "record_hint": "On a phone, tap Upload and choose either record video or choose an existing video. On desktop, upload a saved video file.",
+        "record_hint": "A single clip may include shooting, retrieving the ball, dribbling, walking, and shooting again. Keep the player visible between shots.",
         "upload_help": "The button may still say Upload. On phones, it opens the camera or photo/video library.",
         "record_checklist_title": "Before recording, check this:",
         "record_checklist": """
 - Best result: film 5 or more shots in one clip
 - Fewer shots still work, but stability feedback will be less certain
+- Walking, dribbling, or retrieving the ball between shots is okay
 - Use the same player, camera angle, and distance for consistency analysis
 - Use landscape or portrait, but keep the full body visible
 - Stand 2-4 meters from the camera
@@ -146,12 +147,13 @@ Please upload a short, clear shooting clip:
         "source_upload": "Vorhandenes Video hochladen",
         "upload_label": "Wurfvideo hochladen",
         "record_upload_label": "Wurfvideo aufnehmen oder auswählen",
-        "record_hint": "Am Handy auf Upload tippen und entweder Video aufnehmen oder ein vorhandenes Video auswählen. Am Computer kannst du eine gespeicherte Videodatei hochladen.",
+        "record_hint": "Ein Clip darf Wurf, Ball holen, Dribbling, Gehen und den nächsten Wurf enthalten. Die Person sollte zwischen den Würfen sichtbar bleiben.",
         "upload_help": "Der Button kann weiterhin Upload heißen. Am Handy öffnet er Kamera oder Foto-/Videomediathek.",
         "record_checklist_title": "Vor dem Aufnehmen kurz prüfen:",
         "record_checklist": """
 - Am besten 5 oder mehr Würfe in einem Clip filmen
 - Weniger Würfe funktionieren auch, aber die Stabilitätsanalyse ist dann unsicherer
+- Ball holen, Dribbling oder Gehen zwischen den Würfen ist okay
 - Für die Stabilitätsanalyse gleiche Person, gleiche Perspektive und ähnliche Distanz nutzen
 - Querformat oder Hochformat ist okay, aber der ganze Körper muss sichtbar bleiben
 - Kamera etwa 2-4 Meter entfernt platzieren
@@ -255,12 +257,13 @@ Bitte lade einen kurzen, klaren Wurfclip hoch:
         "source_upload": "上传已有视频",
         "upload_label": "上传投篮视频",
         "record_upload_label": "拍摄或选择投篮视频",
-        "record_hint": "在手机上点击 Upload 后，选择录像或选择已有视频；在电脑上可以上传已保存的视频文件。",
+        "record_hint": "一个视频里可以包含投篮、捡球、运球、走动和下一次投篮；两次投篮之间尽量保持球员可见。",
         "upload_help": "按钮可能仍显示 Upload，这是手机浏览器打开相机或照片/视频库的入口。",
         "record_checklist_title": "拍摄前请确认：",
         "record_checklist": """
 - 最好在同一段视频里拍 5 次或更多投篮
 - 少于 5 次也可以分析，但稳定性判断会更不确定
+- 投篮之间捡球、运球、走动都可以
 - 稳定性分析请尽量保持同一球员、同一角度和相似距离
 - 横屏或竖屏都可以，但全身必须始终可见
 - 手机距离人大约 2-4 米

@@ -399,48 +399,98 @@ if detected_ratio < 0.2 or not enough_lift or not (release_above_head or release
 
 pose_records = sorted(pose_motion, key=lambda item: item["frame_index"])
 fps_value = float(fps or 25)
-peak_window = max(4, int(fps_value * 0.2))
-min_shot_gap = max(25, int(fps_value * 1.25))
 dip_window_frames = max(30, int(fps_value * 12))
-release_candidates = []
 
-for index, record in enumerate(pose_records):
-    start = max(0, index - peak_window)
-    end = min(len(pose_records), index + peak_window + 1)
-    local_wrist_values = [item["wrist_y"] for item in pose_records[start:end]]
-    release_is_high = (
+
+def is_release_posture(record):
+    return (
         record["release_height"] > 0.03 * video_height
         or record["wrist_y"] < record["shoulder_y"] - 0.04 * video_height
     )
-    if not release_is_high or record["wrist_y"] > min(local_wrist_values):
-        continue
 
-    if release_candidates and record["frame_index"] - release_candidates[-1]["frame_index"] < min_shot_gap:
-        if record["wrist_y"] < release_candidates[-1]["wrist_y"]:
-            release_candidates[-1] = record
-        continue
 
-    release_candidates.append(record)
+def find_release_candidates(records):
+    if not records:
+        return []
+
+    min_window_frames = max(3, int(fps_value * 0.12))
+    merge_gap_frames = max(6, int(fps_value * 0.25))
+    min_recovery_frames = max(12, int(fps_value * 0.5))
+    recovery_drop_px = max(28, video_height * 0.08)
+    events = []
+    active_event = []
+    last_high_frame = None
+
+    for record in records:
+        if is_release_posture(record):
+            if active_event and last_high_frame is not None and record["frame_index"] - last_high_frame > merge_gap_frames:
+                events.append(active_event)
+                active_event = []
+            active_event.append(record)
+            last_high_frame = record["frame_index"]
+        elif active_event and last_high_frame is not None and record["frame_index"] - last_high_frame > merge_gap_frames:
+            events.append(active_event)
+            active_event = []
+            last_high_frame = None
+
+    if active_event:
+        events.append(active_event)
+
+    candidates = []
+    for event in events:
+        if event[-1]["frame_index"] - event[0]["frame_index"] + 1 < min_window_frames:
+            continue
+
+        candidate = min(event, key=lambda item: item["wrist_y"])
+        if candidates:
+            previous = candidates[-1]
+            between_records = [
+                item
+                for item in records
+                if previous["frame_index"] < item["frame_index"] < candidate["frame_index"]
+            ]
+            recovered = any(
+                item["wrist_y"] > min(previous["wrist_y"], candidate["wrist_y"]) + recovery_drop_px
+                or item["wrist_y"] > item["shoulder_y"] + 0.02 * video_height
+                for item in between_records
+            )
+            enough_gap = candidate["frame_index"] - previous["frame_index"] >= max(
+                min_recovery_frames, int(fps_value * 1.2)
+            )
+            if not recovered and not enough_gap:
+                if candidate["wrist_y"] < previous["wrist_y"]:
+                    candidates[-1] = candidate
+                continue
+
+        candidates.append(candidate)
+
+    return candidates
+
+
+release_candidates = find_release_candidates(pose_records)
 
 shot_metrics = []
 segments = load_segments(segments_path)
 if segments:
     grouped_candidates = []
     for segment in segments:
+        segment_records = [
+            item
+            for item in pose_records
+            if segment.get("start_frame", 0) <= item["frame_index"] < segment.get("end_frame", 0)
+        ]
         segment_candidates = [
             item
             for item in release_candidates
             if segment.get("start_frame", 0) <= item["frame_index"] < segment.get("end_frame", 0)
         ]
+        if len(segment_candidates) > 1:
+            segment_candidates = [min(segment_candidates, key=lambda item: item["wrist_y"])]
         if not segment_candidates:
             segment_candidates = [
                 item
-                for item in pose_records
-                if segment.get("start_frame", 0) <= item["frame_index"] < segment.get("end_frame", 0)
-                and (
-                    item["release_height"] > 0.03 * video_height
-                    or item["wrist_y"] < item["shoulder_y"] - 0.04 * video_height
-                )
+                for item in segment_records
+                if is_release_posture(item)
             ]
         if segment_candidates:
             grouped_candidates.append(min(segment_candidates, key=lambda item: item["wrist_y"]))
