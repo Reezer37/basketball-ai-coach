@@ -7,7 +7,10 @@ import tempfile
 import time
 from pathlib import Path
 
+import imageio.v2 as imageio
+import numpy as np
 import streamlit as st
+from PIL import Image
 
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -33,7 +36,7 @@ TEXT = {
         "source_record": "Record with phone camera",
         "source_upload": "Upload existing video",
         "upload_label": "Upload shooting video",
-        "record_upload_label": "Record or choose a shooting video",
+        "record_upload_label": "Record or choose shooting videos",
         "record_hint": "On a phone, tap Upload and choose either record video or choose an existing video. On desktop, upload a saved video file.",
         "upload_help": "The button may still say Upload. On phones, it opens the camera or photo/video library.",
         "record_checklist_title": "Before recording, check this:",
@@ -60,6 +63,7 @@ TEXT = {
         "missing_key": "Add an API key in AI API settings before generating coach feedback.",
         "file_too_large": "This video is too large. Please upload a file up to {max_mb} MB. If you recorded on a phone, use a shorter clip or 1080p instead of 4K/HDR.",
         "unsupported_file": "Please choose a video file. Photos or unsupported files cannot be analyzed.",
+        "upload_summary": "{count} video(s) selected.",
         "cooldown": "Please wait {seconds} more seconds before starting another analysis.",
         "start_label": "Start analysis",
         "quick_label": "Quick feedback",
@@ -168,6 +172,7 @@ Please upload a short, clear shooting clip:
         "missing_key": "Bitte zuerst einen API key konfigurieren, um Coach-Feedback zu erzeugen.",
         "file_too_large": "Dieses Video ist zu groß. Bitte lade maximal {max_mb} MB hoch. Wenn du am Handy filmst, nutze einen kürzeren Clip oder 1080p statt 4K/HDR.",
         "unsupported_file": "Bitte wähle eine Videodatei aus. Fotos oder nicht unterstützte Dateien können nicht analysiert werden.",
+        "upload_summary": "{count} Video(s) ausgewählt.",
         "cooldown": "Bitte warte noch {seconds} Sekunden, bevor du die nächste Analyse startest.",
         "start_label": "Analyse starten",
         "quick_label": "Kurzfeedback",
@@ -276,6 +281,7 @@ Bitte lade einen kurzen, klaren Wurfclip hoch:
         "missing_key": "请先在 AI API 设置中填写 API key，再生成教练点评。",
         "file_too_large": "这个视频文件太大。请上传不超过 {max_mb} MB 的视频。如果用手机拍摄，请缩短视频，或使用 1080p 而不是 4K/HDR。",
         "unsupported_file": "请选择视频文件。照片或不支持的文件无法分析。",
+        "upload_summary": "已选择 {count} 个视频。",
         "cooldown": "请再等待 {seconds} 秒后开始下一次分析。",
         "start_label": "开始分析",
         "quick_label": "快速点评",
@@ -514,6 +520,41 @@ def is_supported_video(uploaded_file):
     filename = (getattr(uploaded_file, "name", "") or "").lower()
     video_extensions = (".mp4", ".mov", ".m4v", ".mpeg4", ".webm", ".3gp", ".3gpp")
     return mime_type.startswith("video/") or filename.endswith(video_extensions)
+
+
+def normalize_video_frame(frame, target_size):
+    frame = np.asarray(frame)
+    if frame.ndim == 2:
+        frame = np.stack([frame] * 3, axis=-1)
+    if frame.shape[2] == 4:
+        frame = frame[:, :, :3]
+
+    if target_size and (frame.shape[1], frame.shape[0]) != target_size:
+        image = Image.fromarray(frame)
+        image = image.resize(target_size, Image.Resampling.LANCZOS)
+        frame = np.asarray(image)
+
+    return frame
+
+
+def combine_videos(video_paths, output_path, fps=25):
+    target_size = None
+    wrote_frame = False
+
+    with imageio.get_writer(str(output_path), fps=fps, codec="libx264", macro_block_size=16) as writer:
+        for video_path in video_paths:
+            reader = imageio.get_reader(str(video_path))
+            try:
+                for frame in reader:
+                    if target_size is None:
+                        target_size = (frame.shape[1], frame.shape[0])
+                    writer.append_data(normalize_video_frame(frame, target_size))
+                    wrote_frame = True
+            finally:
+                reader.close()
+
+    if not wrote_frame:
+        raise ValueError("No frames were found in uploaded videos.")
 
 
 def calculate_score(metrics):
@@ -862,7 +903,7 @@ st.markdown(
 )
 
 settings_col, media_col = st.columns([0.92, 1.55], gap="large")
-current_video_bytes = st.session_state.get("uploaded_video_bytes")
+current_videos = st.session_state.get("uploaded_videos", [])
 
 with settings_col:
     st.subheader(t["settings"])
@@ -892,28 +933,42 @@ with settings_col:
         upload_label,
         type=["mp4", "mov", "m4v", "mpeg4", "webm", "3gp", "3gpp"],
         help=t["upload_help"],
+        accept_multiple_files=True,
     )
-    if video is not None:
-        uploaded_video_bytes = video.getvalue()
+    if video:
+        unsupported_files = [item.name for item in video if not is_supported_video(item)]
+        uploaded_videos = [
+            {"name": item.name, "bytes": item.getvalue()}
+            for item in video
+            if is_supported_video(item)
+        ]
+        total_upload_bytes = sum(len(item["bytes"]) for item in uploaded_videos)
         max_upload_bytes = max_upload_mb * 1024 * 1024
-        if not is_supported_video(video):
+        if unsupported_files:
             clear_previous_analysis()
-            st.session_state.pop("uploaded_video_bytes", None)
-            st.session_state.pop("uploaded_video_name", None)
-            current_video_bytes = None
+            st.session_state.pop("uploaded_videos", None)
+            current_videos = []
             st.error(t["unsupported_file"])
-        elif len(uploaded_video_bytes) > max_upload_bytes:
+        elif total_upload_bytes > max_upload_bytes:
             clear_previous_analysis()
-            st.session_state.pop("uploaded_video_bytes", None)
-            st.session_state.pop("uploaded_video_name", None)
-            current_video_bytes = None
+            st.session_state.pop("uploaded_videos", None)
+            current_videos = []
             st.error(t["file_too_large"].format(max_mb=max_upload_mb))
         else:
-            if st.session_state.get("uploaded_video_bytes") != uploaded_video_bytes:
+            previous_signature = [
+                (item["name"], len(item["bytes"]))
+                for item in st.session_state.get("uploaded_videos", [])
+            ]
+            next_signature = [(item["name"], len(item["bytes"])) for item in uploaded_videos]
+            if previous_signature != next_signature:
                 clear_previous_analysis()
-            st.session_state["uploaded_video_bytes"] = uploaded_video_bytes
-            st.session_state["uploaded_video_name"] = video.name
-            current_video_bytes = uploaded_video_bytes
+            st.session_state["uploaded_videos"] = uploaded_videos
+            current_videos = uploaded_videos
+            st.caption(t["upload_summary"].format(count=len(uploaded_videos)))
+    elif "uploaded_videos" in st.session_state:
+        clear_previous_analysis()
+        st.session_state.pop("uploaded_videos", None)
+        current_videos = []
 
     provider = server_provider if server_provider in {"auto", "openai", "gemini"} else "auto"
     openai_key = ""
@@ -943,8 +998,10 @@ with settings_col:
 with media_col:
     video_tab, pose_tab = st.tabs([t["video_tab"], t["pose_tab"]])
     with video_tab:
-        if current_video_bytes:
-            st.video(current_video_bytes)
+        if current_videos:
+            st.video(current_videos[0]["bytes"])
+            if len(current_videos) > 1:
+                st.caption(t["upload_summary"].format(count=len(current_videos)))
         else:
             st.info(t["waiting"])
     with pose_tab:
@@ -953,7 +1010,7 @@ with media_col:
         else:
             st.info(t["empty_pose"])
 
-can_analyze = current_video_bytes is not None
+can_analyze = bool(current_videos)
 
 if st.button(t["start_label"], type="primary", disabled=not can_analyze, use_container_width=True):
     now = time.monotonic()
@@ -982,7 +1039,17 @@ if st.button(t["start_label"], type="primary", disabled=not can_analyze, use_con
         result_path = work_path / "result.txt"
         stability_path = work_path / "stability.json"
         analyzed_image_path = work_path / "release_analyzed.jpg"
-        shot_path.write_bytes(current_video_bytes)
+        source_video_paths = []
+        for index, video_item in enumerate(current_videos):
+            suffix = Path(video_item["name"]).suffix or ".mp4"
+            source_path = work_path / f"source_{index}{suffix}"
+            source_path.write_bytes(video_item["bytes"])
+            source_video_paths.append(source_path)
+
+        if len(source_video_paths) == 1:
+            shot_path.write_bytes(source_video_paths[0].read_bytes())
+        else:
+            combine_videos(source_video_paths, shot_path)
 
         with st.spinner(t["spinner"]):
             try:

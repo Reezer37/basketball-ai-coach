@@ -390,7 +390,7 @@ pose_records = sorted(pose_motion, key=lambda item: item["frame_index"])
 fps_value = float(fps or 25)
 peak_window = max(4, int(fps_value * 0.2))
 min_shot_gap = max(25, int(fps_value * 1.25))
-dip_window_frames = max(15, int(fps_value * 1.5))
+dip_window_frames = max(30, int(fps_value * 12))
 release_candidates = []
 
 for index, record in enumerate(pose_records):
@@ -510,6 +510,20 @@ stability_payload = {
 if stability_path:
     with open(stability_path, "w", encoding="utf-8") as f:
         json.dump(stability_payload, f, ensure_ascii=False, indent=2)
+
+release_local_dip_candidates = [
+    item
+    for item in pose_records
+    if release_data["frame_index"] - dip_window_frames <= item["frame_index"] <= release_data["frame_index"]
+]
+if release_local_dip_candidates:
+    local_dip = max(release_local_dip_candidates, key=lambda item: item["hip_y"])
+    dip_data = {
+        "frame_index": local_dip["frame_index"],
+        "landmarks": local_dip["landmarks"],
+        "width": local_dip["width"],
+        "height": local_dip["height"],
+    }
 
 # ===== 出手瞬间数据 =====
 frame = release_data["frame"]
