@@ -104,6 +104,8 @@ RIGHT_HIP = 24
 RIGHT_KNEE = 26
 RIGHT_ANKLE = 28
 LEFT_SHOULDER = 11
+LEFT_ELBOW = 13
+LEFT_WRIST = 15
 LEFT_HIP = 23
 LEFT_ANKLE = 27
 NOSE = 0
@@ -268,6 +270,37 @@ def stddev(values):
     return math.sqrt(variance)
 
 
+def get_joint_y(landmarks, landmark_index, height):
+    return landmarks[landmark_index].y * height
+
+
+def get_shooting_side_measurements(landmarks, height):
+    nose_y = get_joint_y(landmarks, NOSE, height)
+    right_wrist_y = get_joint_y(landmarks, RIGHT_WRIST, height)
+    left_wrist_y = get_joint_y(landmarks, LEFT_WRIST, height)
+    right_shoulder_y = get_joint_y(landmarks, RIGHT_SHOULDER, height)
+    left_shoulder_y = get_joint_y(landmarks, LEFT_SHOULDER, height)
+
+    right_release_height = nose_y - right_wrist_y
+    left_release_height = nose_y - left_wrist_y
+    if left_release_height > right_release_height:
+        return {
+            "side": "left",
+            "wrist_y": left_wrist_y,
+            "elbow_y": get_joint_y(landmarks, LEFT_ELBOW, height),
+            "shoulder_y": left_shoulder_y,
+            "release_height": left_release_height,
+        }
+
+    return {
+        "side": "right",
+        "wrist_y": right_wrist_y,
+        "elbow_y": get_joint_y(landmarks, RIGHT_ELBOW, height),
+        "shoulder_y": right_shoulder_y,
+        "release_height": right_release_height,
+    }
+
+
 def load_segments(path):
     if not path:
         return []
@@ -320,28 +353,25 @@ with create_pose_detector() as pose:
             h, w, _ = rgb.shape
             lm = landmarks
 
-            wrist = lm[RIGHT_WRIST]
-            elbow = lm[RIGHT_ELBOW]
-            shoulder = lm[RIGHT_SHOULDER]
             hip = lm[RIGHT_HIP]
             nose = lm[NOSE]
+            shooting = get_shooting_side_measurements(lm, h)
 
-            wrist_y = wrist.y * h
             hip_y = hip.y * h
-            elbow_y = elbow.y * h
-            shoulder_y = shoulder.y * h
             nose_y = nose.y * h
-            release_height_now = nose_y - wrist_y
+            wrist_y = shooting["wrist_y"]
+            release_height_now = shooting["release_height"]
 
             pose_motion.append(
                 {
                     "frame_index": frame_index,
                     "wrist_y": wrist_y,
-                    "elbow_y": elbow_y,
-                    "shoulder_y": shoulder_y,
+                    "elbow_y": shooting["elbow_y"],
+                    "shoulder_y": shooting["shoulder_y"],
                     "nose_y": nose_y,
                     "hip_y": hip_y,
                     "release_height": release_height_now,
+                    "shooting_side": shooting["side"],
                     "landmarks": landmarks,
                     "width": w,
                     "height": h,
@@ -384,11 +414,11 @@ release_frame_motion = next(
     (item for item in pose_motion if item["frame_index"] == release_data["frame_index"]),
     None,
 )
-release_above_head = bool(release_frame_motion and release_frame_motion["release_height"] > 0.03 * video_height)
+release_above_head = bool(release_frame_motion and release_frame_motion["release_height"] > -0.04 * video_height)
 release_above_shoulder = bool(
-    release_frame_motion and release_frame_motion["wrist_y"] < release_frame_motion["shoulder_y"] - 0.04 * video_height
+    release_frame_motion and release_frame_motion["wrist_y"] < release_frame_motion["shoulder_y"] + 0.03 * video_height
 )
-enough_lift = wrist_lift > 0.12 * video_height
+enough_lift = wrist_lift > 0.08 * video_height
 
 if detected_ratio < 0.2 or not enough_lift or not (release_above_head or release_above_shoulder):
     print("NO_SHOOTING_MOTION")
@@ -404,8 +434,8 @@ dip_window_frames = max(30, int(fps_value * 12))
 
 def is_release_posture(record):
     return (
-        record["release_height"] > 0.03 * video_height
-        or record["wrist_y"] < record["shoulder_y"] - 0.04 * video_height
+        record["release_height"] > -0.04 * video_height
+        or record["wrist_y"] < record["shoulder_y"] + 0.03 * video_height
     )
 
 
