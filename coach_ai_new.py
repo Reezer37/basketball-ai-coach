@@ -64,6 +64,15 @@ def load_metrics(result_path):
     }
 
 
+def load_stability(stability_path):
+    if not stability_path or not Path(stability_path).exists():
+        return None
+    try:
+        return json.loads(Path(stability_path).read_text(encoding="utf-8"))
+    except (json.JSONDecodeError, OSError):
+        return None
+
+
 def calculate_score(metrics):
     score = 100
 
@@ -95,6 +104,57 @@ def calculate_score(metrics):
         score -= 6
 
     return max(0, min(100, round(score)))
+
+
+def build_stability_context(stability, lang):
+    if not stability:
+        return ""
+
+    detected_shots = stability.get("detected_shots", 0)
+    recommended_shots = stability.get("recommended_shots", 5)
+    score = stability.get("stability_score")
+    confidence = stability.get("confidence", "low")
+    variability = stability.get("metric_variability", {})
+
+    score_text = "not available" if score is None else f"{score}/100"
+    if lang == "de":
+        return f"""
+
+Zusatzdaten zur Wurfstabilität:
+- Erkannte Würfe im Clip: {detected_shots}
+- Empfehlung für bessere Stabilitätsanalyse: mindestens {recommended_shots} Würfe
+- Stabilitätswert: {score_text}
+- Verlässlichkeit: {confidence}
+- Streuung Ellbogenwinkel: {variability.get("elbow_angle_std", "n/a")}
+- Streuung Release-Höhe: {variability.get("release_height_std", "n/a")}
+
+Nutze diese Daten als wichtigen Abschnitt. Wenn weniger als {recommended_shots} Würfe erkannt wurden, klar sagen, dass die Stabilitätsaussage nur vorläufig ist.
+"""
+    if lang == "en":
+        return f"""
+
+Additional shot-consistency data:
+- Detected shots in the clip: {detected_shots}
+- Recommended for stronger consistency analysis: at least {recommended_shots} shots
+- Consistency score: {score_text}
+- Confidence: {confidence}
+- Elbow-angle variation: {variability.get("elbow_angle_std", "n/a")}
+- Release-height variation: {variability.get("release_height_std", "n/a")}
+
+Treat consistency as an important section. If fewer than {recommended_shots} shots were detected, clearly say the consistency read is preliminary.
+"""
+    return f"""
+
+投篮稳定性补充数据：
+- 本视频识别到的投篮次数：{detected_shots}
+- 更可靠稳定性分析建议：至少 {recommended_shots} 次投篮
+- 稳定性评分：{score_text}
+- 判断可信度：{confidence}
+- 手肘角度波动：{variability.get("elbow_angle_std", "n/a")}
+- 出手高度波动：{variability.get("release_height_std", "n/a")}
+
+请把稳定性作为重要分析单元。如果识别到的投篮次数少于 {recommended_shots} 次，需要明确说明稳定性判断只是初步参考。
+"""
 
 
 PLAYER_PROFILES = {
@@ -603,6 +663,7 @@ parser.add_argument("--lang", default="zh", choices=["zh", "en", "de"])
 parser.add_argument("--provider", default=DEFAULT_PROVIDER, choices=["auto", "gemini", "openai"])
 parser.add_argument("--model", default="")
 parser.add_argument("--result", default=str(BASE_DIR / "result.txt"))
+parser.add_argument("--stability", default="")
 parser.add_argument("--fallback", action="store_true")
 parser.add_argument("--max_output_tokens", type=int, default=DEFAULT_MAX_OUTPUT_TOKENS)
 parser.add_argument("--temperature", type=float, default=DEFAULT_TEMPERATURE)
@@ -616,6 +677,7 @@ else:
     metrics = load_metrics(args.result)
     score = calculate_score(metrics)
     prompt = build_prompt(metrics, score, args.mode, args.player_model, args.lang)
+    prompt += build_stability_context(load_stability(args.stability), args.lang)
 
 status_text = {
     "en": "Generating AI coach feedback...",

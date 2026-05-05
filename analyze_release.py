@@ -1,4 +1,5 @@
 import argparse
+import json
 import math
 import os
 import sys
@@ -61,11 +62,13 @@ parser = argparse.ArgumentParser()
 parser.add_argument("--input", default="shot.mp4")
 parser.add_argument("--output-image", default="release_analyzed.jpg")
 parser.add_argument("--result", default="result.txt")
+parser.add_argument("--stability", default="")
 args = parser.parse_args()
 
 input_video = args.input
 output_image = args.output_image
 result_path = args.result
+stability_path = args.stability
 
 POSE_CONNECTIONS = [
     (11, 12),
@@ -180,6 +183,69 @@ def calc_angle(a, b, c):
     cos_angle = max(-1, min(1, dot / (mag_ab * mag_cb)))
     return math.degrees(math.acos(cos_angle))
 
+
+def calc_release_metrics(release_record, dip_record):
+    lm = release_record["landmarks"]
+    w = release_record["width"]
+    h = release_record["height"]
+
+    right_shoulder = lm[RIGHT_SHOULDER]
+    right_elbow = lm[RIGHT_ELBOW]
+    right_wrist = lm[RIGHT_WRIST]
+    right_hip = lm[RIGHT_HIP]
+    right_knee = lm[RIGHT_KNEE]
+    right_ankle = lm[RIGHT_ANKLE]
+    nose = lm[NOSE]
+
+    s = (right_shoulder.x * w, right_shoulder.y * h)
+    e = (right_elbow.x * w, right_elbow.y * h)
+    wr = (right_wrist.x * w, right_wrist.y * h)
+    hip = (right_hip.x * w, right_hip.y * h)
+    knee = (right_knee.x * w, right_knee.y * h)
+    ankle = (right_ankle.x * w, right_ankle.y * h)
+
+    elbow_angle = calc_angle(s, e, wr)
+    release_knee_angle = calc_angle(hip, knee, ankle)
+
+    dip_lm = dip_record["landmarks"]
+    dw = dip_record["width"]
+    dh = dip_record["height"]
+    dip_hip_lm = dip_lm[RIGHT_HIP]
+    dip_knee_lm = dip_lm[RIGHT_KNEE]
+    dip_ankle_lm = dip_lm[RIGHT_ANKLE]
+
+    dip_hip = (dip_hip_lm.x * dw, dip_hip_lm.y * dh)
+    dip_knee = (dip_knee_lm.x * dw, dip_knee_lm.y * dh)
+    dip_ankle = (dip_ankle_lm.x * dw, dip_ankle_lm.y * dh)
+    dip_knee_angle = calc_angle(dip_hip, dip_knee, dip_ankle)
+
+    if elbow_angle is None or release_knee_angle is None or dip_knee_angle is None:
+        return None
+
+    release_height = (nose.y * h) - (right_wrist.y * h)
+    body_lean = (right_shoulder.x * w) - (right_hip.x * w)
+    knee_extension = release_knee_angle - dip_knee_angle
+    flow_frames = release_record["frame_index"] - dip_record["frame_index"]
+
+    return {
+        "frame_index": release_record["frame_index"],
+        "elbow_angle": elbow_angle,
+        "release_height": release_height,
+        "body_lean": body_lean,
+        "dip_knee_angle": dip_knee_angle,
+        "release_knee_angle": release_knee_angle,
+        "knee_extension": knee_extension,
+        "flow_frames": flow_frames,
+    }
+
+
+def stddev(values):
+    if len(values) < 2:
+        return 0.0
+    mean = sum(values) / len(values)
+    variance = sum((value - mean) ** 2 for value in values) / len(values)
+    return math.sqrt(variance)
+
 try:
     frames = iio.imiter(input_video)
     first_frame = next(frames)
@@ -246,6 +312,9 @@ with create_pose_detector() as pose:
                     "nose_y": nose_y,
                     "hip_y": hip_y,
                     "release_height": release_height_now,
+                    "landmarks": landmarks,
+                    "width": w,
+                    "height": h,
                 }
             )
 
@@ -297,6 +366,96 @@ if detected_ratio < 0.2 or not enough_lift or not (release_above_head or release
     print(f"姿态检测比例: {detected_ratio:.2f}")
     print(f"手腕上升距离: {wrist_lift:.1f}px")
     exit(3)
+
+pose_records = sorted(pose_motion, key=lambda item: item["frame_index"])
+fps_value = float(fps or 25)
+peak_window = max(4, int(fps_value * 0.2))
+min_shot_gap = max(25, int(fps_value * 1.25))
+dip_window_frames = max(15, int(fps_value * 1.5))
+release_candidates = []
+
+for index, record in enumerate(pose_records):
+    start = max(0, index - peak_window)
+    end = min(len(pose_records), index + peak_window + 1)
+    local_wrist_values = [item["wrist_y"] for item in pose_records[start:end]]
+    release_is_high = (
+        record["release_height"] > 0.03 * video_height
+        or record["wrist_y"] < record["shoulder_y"] - 0.04 * video_height
+    )
+    if not release_is_high or record["wrist_y"] > min(local_wrist_values):
+        continue
+
+    if release_candidates and record["frame_index"] - release_candidates[-1]["frame_index"] < min_shot_gap:
+        if record["wrist_y"] < release_candidates[-1]["wrist_y"]:
+            release_candidates[-1] = record
+        continue
+
+    release_candidates.append(record)
+
+shot_metrics = []
+for candidate in release_candidates[:12]:
+    dip_candidates = [
+        item
+        for item in pose_records
+        if candidate["frame_index"] - dip_window_frames <= item["frame_index"] <= candidate["frame_index"]
+    ]
+    if not dip_candidates:
+        continue
+
+    local_dip = max(dip_candidates, key=lambda item: item["hip_y"])
+    metrics_for_shot = calc_release_metrics(candidate, local_dip)
+    if metrics_for_shot and metrics_for_shot["flow_frames"] >= max(5, int(fps_value * 0.15)):
+        shot_metrics.append(metrics_for_shot)
+
+shot_count = len(shot_metrics)
+stability_score = None
+stability_confidence = "low"
+metric_variability = {}
+
+if shot_count >= 2:
+    metric_variability = {
+        "elbow_angle_std": stddev([item["elbow_angle"] for item in shot_metrics]),
+        "release_height_std": stddev([item["release_height"] for item in shot_metrics]),
+        "body_lean_std": stddev([item["body_lean"] for item in shot_metrics]),
+        "knee_extension_std": stddev([item["knee_extension"] for item in shot_metrics]),
+        "flow_frames_std": stddev([item["flow_frames"] for item in shot_metrics]),
+    }
+    variability_index = (
+        metric_variability["elbow_angle_std"] / 12
+        + metric_variability["release_height_std"] / max(20, video_height * 0.08)
+        + metric_variability["body_lean_std"] / max(20, video_width * 0.08)
+        + metric_variability["knee_extension_std"] / 18
+        + metric_variability["flow_frames_std"] / max(8, fps_value * 0.35)
+    )
+    stability_score = max(0, min(100, round(100 - variability_index * 20)))
+
+if shot_count >= 5:
+    stability_confidence = "high"
+elif shot_count >= 3:
+    stability_confidence = "medium"
+
+stability_payload = {
+    "detected_shots": shot_count,
+    "recommended_shots": 5,
+    "stability_score": stability_score,
+    "confidence": stability_confidence,
+    "metric_variability": {key: round(value, 1) for key, value in metric_variability.items()},
+    "shots": [
+        {
+            "frame_index": item["frame_index"],
+            "elbow_angle": round(item["elbow_angle"], 1),
+            "release_height": round(item["release_height"], 1),
+            "body_lean": round(item["body_lean"], 1),
+            "knee_extension": round(item["knee_extension"], 1),
+            "flow_frames": int(item["flow_frames"]),
+        }
+        for item in shot_metrics
+    ],
+}
+
+if stability_path:
+    with open(stability_path, "w", encoding="utf-8") as f:
+        json.dump(stability_payload, f, ensure_ascii=False, indent=2)
 
 # ===== 出手瞬间数据 =====
 frame = release_data["frame"]

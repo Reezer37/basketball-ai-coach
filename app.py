@@ -1,3 +1,4 @@
+import json
 import os
 import shutil
 import subprocess
@@ -37,7 +38,8 @@ TEXT = {
         "upload_help": "The button may still say Upload. On phones, it opens the camera or photo/video library.",
         "record_checklist_title": "Before recording, check this:",
         "record_checklist": """
-- Film 3-8 seconds, one complete shot only
+- Best result: film 5 or more shots in one clip
+- Fewer shots still work, but stability feedback will be less certain
 - Use landscape or portrait, but keep the full body visible
 - Stand 2-4 meters from the camera
 - Best angle: side view or about 45 degrees
@@ -92,6 +94,15 @@ Please upload a short, clear shooting clip:
         "score_label": "Shot mechanics",
         "score_caption": "A form-quality score for balance, timing, and repeatability. It is not a make-percentage prediction.",
         "metrics_title": "Key biomechanics",
+        "stability_title": "Shot consistency",
+        "stability_score": "Consistency score",
+        "stability_detected": "Detected shots",
+        "stability_confidence": "Confidence",
+        "stability_low": "Low",
+        "stability_medium": "Medium",
+        "stability_high": "High",
+        "stability_limited": "Upload 5 or more shots for a more reliable consistency read. This result is still useful for a first look.",
+        "stability_help": "This section compares repeated releases in the same clip. More shots make the pattern more trustworthy.",
         "coach_title": "AI coach feedback",
         "no_feedback": "No coach feedback was returned.",
         "metric_elbow": "Elbow angle",
@@ -133,7 +144,8 @@ Please upload a short, clear shooting clip:
         "upload_help": "Der Button kann weiterhin Upload heißen. Am Handy öffnet er Kamera oder Foto-/Videomediathek.",
         "record_checklist_title": "Vor dem Aufnehmen kurz prüfen:",
         "record_checklist": """
-- 3-8 Sekunden filmen, nur einen vollständigen Wurf
+- Am besten 5 oder mehr Würfe in einem Clip filmen
+- Weniger Würfe funktionieren auch, aber die Stabilitätsanalyse ist dann unsicherer
 - Querformat oder Hochformat ist okay, aber der ganze Körper muss sichtbar bleiben
 - Kamera etwa 2-4 Meter entfernt platzieren
 - Beste Perspektive: Seitenansicht oder etwa 45 Grad
@@ -188,6 +200,15 @@ Bitte lade einen kurzen, klaren Wurfclip hoch:
         "score_label": "Wurfmechanik",
         "score_caption": "Ein Qualitätswert für Balance, Timing und Wiederholbarkeit. Er ist keine Trefferwahrscheinlichkeit.",
         "metrics_title": "Wichtige Biomechanik",
+        "stability_title": "Wurfstabilität",
+        "stability_score": "Stabilitätswert",
+        "stability_detected": "Erkannte Würfe",
+        "stability_confidence": "Verlässlichkeit",
+        "stability_low": "Niedrig",
+        "stability_medium": "Mittel",
+        "stability_high": "Hoch",
+        "stability_limited": "Lade 5 oder mehr Würfe hoch, um die Stabilität zuverlässiger einzuschätzen. Dieses Ergebnis ist trotzdem als erster Check nutzbar.",
+        "stability_help": "Dieser Bereich vergleicht wiederholte Releases im selben Clip. Mehr Würfe machen das Muster verlässlicher.",
         "coach_title": "AI Coach-Feedback",
         "no_feedback": "Es wurde kein Coach-Feedback zurückgegeben.",
         "metric_elbow": "Ellbogenwinkel",
@@ -229,7 +250,8 @@ Bitte lade einen kurzen, klaren Wurfclip hoch:
         "upload_help": "按钮可能仍显示 Upload，这是手机浏览器打开相机或照片/视频库的入口。",
         "record_checklist_title": "拍摄前请确认：",
         "record_checklist": """
-- 拍 3-8 秒，只包含一次完整投篮
+- 最好在同一段视频里拍 5 次或更多投篮
+- 少于 5 次也可以分析，但稳定性判断会更不确定
 - 横屏或竖屏都可以，但全身必须始终可见
 - 手机距离人大约 2-4 米
 - 最佳角度：侧面或约 45 度
@@ -284,6 +306,15 @@ Bitte lade einen kurzen, klaren Wurfclip hoch:
         "score_label": "投篮动作",
         "score_caption": "这是关于平衡、节奏和可重复性的动作质量评分，不代表这次投篮的命中率。",
         "metrics_title": "关键生物力学指标",
+        "stability_title": "投篮稳定性",
+        "stability_score": "稳定性评分",
+        "stability_detected": "识别到的投篮次数",
+        "stability_confidence": "判断可信度",
+        "stability_low": "低",
+        "stability_medium": "中",
+        "stability_high": "高",
+        "stability_limited": "上传 5 次或更多投篮可以获得更可靠的稳定性判断；当前结果仍可作为初步参考。",
+        "stability_help": "这一单元会比较同一段视频里的多次出手。投篮次数越多，动作模式越可信。",
         "coach_title": "AI教练点评",
         "no_feedback": "没有返回教练点评。",
         "metric_elbow": "手肘角度",
@@ -537,6 +568,15 @@ def load_metrics(result_path):
     }
 
 
+def load_stability(stability_path):
+    if not stability_path.exists():
+        return None
+    try:
+        return json.loads(stability_path.read_text(encoding="utf-8"))
+    except (json.JSONDecodeError, OSError):
+        return None
+
+
 def timing_is_reliable(metrics):
     return metrics["flow_frames"] > 0
 
@@ -567,6 +607,7 @@ def clear_previous_analysis():
         "analyzed_image_bytes",
         "analysis_metrics",
         "analysis_score",
+        "analysis_stability",
         "coach_feedback",
         "analysis_error_key",
     ]:
@@ -576,6 +617,34 @@ def clear_previous_analysis():
 def metric_card(label, value, help_text):
     st.metric(label, value)
     st.caption(help_text)
+
+
+def render_stability(stability):
+    if not stability:
+        return
+
+    confidence_labels = {
+        "low": t["stability_low"],
+        "medium": t["stability_medium"],
+        "high": t["stability_high"],
+    }
+    detected_shots = int(stability.get("detected_shots") or 0)
+    recommended_shots = int(stability.get("recommended_shots") or 5)
+    confidence = stability.get("confidence", "low")
+    score = stability.get("stability_score")
+
+    st.subheader(t["stability_title"])
+    st.caption(t["stability_help"])
+    s1, s2, s3 = st.columns(3)
+    with s1:
+        st.metric(t["stability_detected"], f"{detected_shots}/{recommended_shots}+")
+    with s2:
+        st.metric(t["stability_score"], f"{score}/100" if score is not None else "N/A")
+    with s3:
+        st.metric(t["stability_confidence"], confidence_labels.get(confidence, confidence))
+
+    if detected_shots < recommended_shots:
+        st.info(t["stability_limited"])
 
 
 def render_landing(lang_code):
@@ -897,11 +966,13 @@ if st.button(t["start_label"], type="primary", disabled=not can_analyze, use_con
         analysis_debug = ""
         metrics = None
         score = None
+        stability = None
         analyzed_image_bytes = None
 
         work_path = Path(work_dir)
         shot_path = work_path / "shot.mp4"
         result_path = work_path / "result.txt"
+        stability_path = work_path / "stability.json"
         analyzed_image_path = work_path / "release_analyzed.jpg"
         shot_path.write_bytes(current_video_bytes)
 
@@ -917,6 +988,8 @@ if st.button(t["start_label"], type="primary", disabled=not can_analyze, use_con
                         str(analyzed_image_path),
                         "--result",
                         str(result_path),
+                        "--stability",
+                        str(stability_path),
                     ],
                     cwd=BASE_DIR,
                     capture_output=True,
@@ -937,6 +1010,7 @@ if st.button(t["start_label"], type="primary", disabled=not can_analyze, use_con
             if analysis_error_key is None and not fallback_analysis:
                 try:
                     metrics = load_metrics(result_path)
+                    stability = load_stability(stability_path)
                 except (FileNotFoundError, OSError, ValueError, TypeError):
                     fallback_analysis = True
 
@@ -967,6 +1041,7 @@ if st.button(t["start_label"], type="primary", disabled=not can_analyze, use_con
             score_col, metrics_col = st.columns([0.65, 1.35], gap="large")
             st.session_state["analysis_metrics"] = metrics
             st.session_state["analysis_score"] = score
+            st.session_state["analysis_stability"] = stability
             if not timing_is_reliable(metrics):
                 st.warning(t["timing_warning"])
 
@@ -989,6 +1064,8 @@ if st.button(t["start_label"], type="primary", disabled=not can_analyze, use_con
                     metric_card(t["metric_extension"], f'{metrics["knee_extension"]:.1f}°', t["metric_extension_help"])
 
                 metric_card(t["metric_flow"], f'{metrics["flow_frames"]:.0f}', t["metric_flow_help"])
+
+            render_stability(stability)
 
             if analyzed_image_bytes:
                 st.session_state["analyzed_image_bytes"] = analyzed_image_bytes
@@ -1032,6 +1109,8 @@ if st.button(t["start_label"], type="primary", disabled=not can_analyze, use_con
             provider,
             "--result",
             str(result_path),
+            "--stability",
+            str(stability_path),
             "--max_output_tokens",
             str(ai_max_output_tokens),
         ]
