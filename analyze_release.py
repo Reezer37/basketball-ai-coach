@@ -274,6 +274,49 @@ def get_joint_y(landmarks, landmark_index, height):
     return landmarks[landmark_index].y * height
 
 
+def get_visibility(landmark):
+    return float(getattr(landmark, "visibility", 1.0) or 0.0)
+
+
+def pose_quality(landmarks, width, height):
+    core_indices = [NOSE, LEFT_SHOULDER, RIGHT_SHOULDER, LEFT_HIP, RIGHT_HIP]
+    limb_indices = core_indices + [LEFT_WRIST, RIGHT_WRIST, LEFT_ANKLE, RIGHT_ANKLE]
+    core_visibility = sum(get_visibility(landmarks[index]) for index in core_indices) / len(core_indices)
+    visible_points = [landmarks[index] for index in limb_indices if get_visibility(landmarks[index]) > 0.2]
+
+    if core_visibility < 0.35 or len(visible_points) < 6:
+        return {"valid": False, "reason": "low_visibility"}
+
+    xs = [point.x * width for point in visible_points]
+    ys = [point.y * height for point in visible_points]
+    box_width = max(xs) - min(xs)
+    box_height = max(ys) - min(ys)
+    body_height_norm = box_height / height
+    box_aspect = box_width / max(box_height, 1)
+
+    left_shoulder = landmarks[LEFT_SHOULDER]
+    right_shoulder = landmarks[RIGHT_SHOULDER]
+    left_hip = landmarks[LEFT_HIP]
+    right_hip = landmarks[RIGHT_HIP]
+    shoulder_center_y = (left_shoulder.y + right_shoulder.y) * height / 2
+    hip_center_y = (left_hip.y + right_hip.y) * height / 2
+    torso_height_norm = abs(hip_center_y - shoulder_center_y) / height
+
+    if body_height_norm < 0.16:
+        return {"valid": False, "reason": "pose_too_small"}
+    if box_aspect > 1.65:
+        return {"valid": False, "reason": "unrealistic_pose_width"}
+    if torso_height_norm < 0.04:
+        return {"valid": False, "reason": "flat_torso"}
+
+    return {
+        "valid": True,
+        "body_height_norm": body_height_norm,
+        "box_aspect": box_aspect,
+        "core_visibility": core_visibility,
+    }
+
+
 def get_shooting_side_measurements(landmarks, height):
     nose_y = get_joint_y(landmarks, NOSE, height)
     right_wrist_y = get_joint_y(landmarks, RIGHT_WRIST, height)
@@ -335,6 +378,7 @@ dip_data = None
 
 frame_index = 0
 pose_frames = 0
+rejected_pose_frames = 0
 pose_motion = []
 
 with create_pose_detector() as pose:
@@ -349,6 +393,12 @@ with create_pose_detector() as pose:
         landmarks = pose.process(rgb)
 
         if landmarks:
+            quality = pose_quality(landmarks, rgb.shape[1], rgb.shape[0])
+            if not quality["valid"]:
+                rejected_pose_frames += 1
+                frame_index += 1
+                continue
+
             pose_frames += 1
             h, w, _ = rgb.shape
             lm = landmarks
@@ -372,6 +422,8 @@ with create_pose_detector() as pose:
                     "hip_y": hip_y,
                     "release_height": release_height_now,
                     "shooting_side": shooting["side"],
+                    "body_height_norm": quality["body_height_norm"],
+                    "box_aspect": quality["box_aspect"],
                     "landmarks": landmarks,
                     "width": w,
                     "height": h,
@@ -402,6 +454,7 @@ with create_pose_detector() as pose:
         frame_index += 1
 
 print("检测到人体姿态的帧数:", pose_frames)
+print("过滤掉低质量姿态帧数:", rejected_pose_frames)
 
 if not release_data or not dip_data:
     print("没有检测到完整人体动作")
