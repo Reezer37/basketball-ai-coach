@@ -414,6 +414,9 @@ LANDING = {
         "interest_text": "Hilf mit, den ersten bezahlten Test zu formen. Die Registrierung ist noch keine Bestellung und dauert weniger als eine Minute.",
         "interest_submit": "Interesse vormerken",
         "interest_hint": "Öffnet ein kurzes Tally-Formular in einem neuen Tab.",
+        "payment_submit": "Beta-Bericht kaufen",
+        "payment_hint": "Öffnet den sicheren Stripe-Bezahlvorgang in einem neuen Tab.",
+        "payment_note": "Nach der Zahlung kommst du zurück und kannst dein Wurfvideo hochladen.",
     },
     "en": {
         "headline": "Test a basketball shot form check from 1.99 Euro",
@@ -473,6 +476,9 @@ LANDING = {
         "interest_text": "Help shape the first paid test. This is not an order yet and takes less than a minute.",
         "interest_submit": "Register interest",
         "interest_hint": "Opens a short Tally form in a new tab.",
+        "payment_submit": "Buy beta report",
+        "payment_hint": "Opens the secure Stripe checkout in a new tab.",
+        "payment_note": "After payment, return here and upload your shooting video.",
     },
     "zh": {
         "headline": "测试 1.99 欧元篮球投篮动作报告",
@@ -532,6 +538,9 @@ LANDING = {
         "interest_text": "帮我们确定第一版付费测试的方向。这还不是正式订单，填写不到一分钟。",
         "interest_submit": "登记兴趣",
         "interest_hint": "会在新标签页打开一个简短的 Tally 表单。",
+        "payment_submit": "购买 Beta 报告",
+        "payment_hint": "会在新标签页打开安全的 Stripe 支付页面。",
+        "payment_note": "付款后回到这里上传你的投篮视频。",
     },
 }
 
@@ -757,9 +766,13 @@ def render_stability(stability):
         st.warning(t["stability_merge_warning"])
 
 
-def render_landing(lang_code):
+def render_landing(lang_code, payment_url=""):
     landing = LANDING[lang_code]
     badge_html = "".join(f"<span>{badge}</span>" for badge in landing["badges"])
+    purchase_url = payment_url or TALLY_INTEREST_URL
+    purchase_label = landing["payment_submit"] if payment_url else landing["interest_submit"]
+    purchase_hint = landing["payment_hint"] if payment_url else landing["interest_hint"]
+    purchase_note = landing["payment_note"] if payment_url else landing["interest_text"]
     st.markdown(
         f"""
         <section class="market-hero">
@@ -771,8 +784,9 @@ def render_landing(lang_code):
                 <div class="market-price">{landing["price"]}</div>
                 <div class="market-actions">
                     <a class="market-primary" href="#analysis-tool">{landing["cta"]}</a>
-                    <a class="market-secondary" href="{TALLY_INTEREST_URL}" target="_blank" rel="noopener noreferrer">{landing["interest_submit"]}</a>
+                    <a class="market-secondary" href="{purchase_url}" target="_blank" rel="noopener noreferrer">{purchase_label}</a>
                 </div>
+                <div class="market-note">{purchase_note}</div>
                 <div class="market-proof">{landing["proof"]}</div>
             </div>
         </section>
@@ -849,9 +863,9 @@ def render_landing(lang_code):
             st.markdown(f"- {question}")
 
     st.markdown(f"#### {landing['interest_title']}")
-    st.caption(landing["interest_text"])
-    st.link_button(landing["interest_submit"], TALLY_INTEREST_URL, type="primary")
-    st.caption(landing["interest_hint"])
+    st.caption(purchase_note)
+    st.link_button(purchase_label, purchase_url, type="primary")
+    st.caption(purchase_hint)
 
     st.divider()
     st.markdown('<div id="analysis-tool"></div>', unsafe_allow_html=True)
@@ -983,6 +997,11 @@ st.markdown(
         opacity: 0.74;
         font-size: 0.95rem;
     }
+    .market-note {
+        margin-top: 0.55rem;
+        opacity: 0.72;
+        font-size: 0.9rem;
+    }
     .step-card {
         border: 1px solid rgba(59, 130, 246, 0.24);
         border-radius: 8px;
@@ -1058,8 +1077,9 @@ t = TEXT[lang_code]
 max_upload_mb = get_int_secret("MAX_UPLOAD_MB", 180, 1, 500)
 analysis_cooldown_seconds = get_int_secret("ANALYSIS_COOLDOWN_SECONDS", 20, 0, 300)
 ai_max_output_tokens = get_int_secret("AI_COACH_MAX_OUTPUT_TOKENS", 650, 128, 1000)
+payment_link_url = get_secret("STRIPE_PAYMENT_LINK_URL", "").strip()
 
-render_landing(lang_code)
+render_landing(lang_code, payment_link_url)
 
 st.markdown(
     f"""
