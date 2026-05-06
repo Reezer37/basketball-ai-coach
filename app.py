@@ -24,10 +24,10 @@ LANG_OPTIONS = {
 
 TEXT = {
     "en": {
-        "page_title": "AI Basketball Shot Coach",
-        "eyebrow": "Video form analysis",
-        "title": "AI Basketball Shot Coach",
-        "desc": "Upload a shooting video to analyze release mechanics, lower-body power, balance, and receive practical AI coach feedback.",
+        "page_title": "Basketball Shot Form Check",
+        "eyebrow": "Video shot report",
+        "title": "Basketball Shot Form Check",
+        "desc": "Upload one or more shooting clips and get a structured form report: release pose, mechanics, consistency, and practical next-step drills.",
         "language": "Language",
         "settings": "Session setup",
         "style_label": "Reference style",
@@ -110,7 +110,7 @@ Please upload a short, clear shooting clip:
         "stability_limited": "Upload 5 or more shots for a more reliable consistency read. This result is still useful for a first look.",
         "stability_merge_warning": "These shots may not share the same player, camera angle, or distance. Consistency results may be less reliable.",
         "stability_help": "This section compares repeated releases in the same clip. More shots make the pattern more trustworthy.",
-        "coach_title": "AI coach feedback",
+        "coach_title": "Report notes and drills",
         "no_feedback": "No coach feedback was returned.",
         "metric_elbow": "Elbow angle",
         "metric_elbow_help": "Release-arm extension at the moment of release.",
@@ -134,10 +134,10 @@ Please upload a short, clear shooting clip:
         },
     },
     "de": {
-        "page_title": "KI Basketball Wurfanalyse",
-        "eyebrow": "Video-Wurfanalyse",
-        "title": "KI Basketball Wurfanalyse",
-        "desc": "Lade ein Wurfvideo hoch und erhalte eine technische Analyse zu Release, Beinarbeit, Balance und konkreten Coach-Hinweisen.",
+        "page_title": "Basketball Wurf-Check",
+        "eyebrow": "Video-Wurfbericht",
+        "title": "Basketball Wurf-Check",
+        "desc": "Lade einen oder mehrere Wurfclips hoch und erhalte einen strukturierten Technikbericht zu Release, Mechanik, Stabilität und konkreten Übungen.",
         "language": "Sprache",
         "settings": "Analyse starten",
         "style_label": "Referenzstil",
@@ -220,7 +220,7 @@ Bitte lade einen kurzen, klaren Wurfclip hoch:
         "stability_limited": "Lade 5 oder mehr Würfe hoch, um die Stabilität zuverlässiger einzuschätzen. Dieses Ergebnis ist trotzdem als erster Check nutzbar.",
         "stability_merge_warning": "Diese Würfe wirken möglicherweise nicht wie gleiche Person, gleicher Kamerawinkel oder gleiche Distanz. Die Stabilitätswerte können dadurch unzuverlässiger sein.",
         "stability_help": "Dieser Bereich vergleicht wiederholte Releases im selben Clip. Mehr Würfe machen das Muster verlässlicher.",
-        "coach_title": "AI Coach-Feedback",
+        "coach_title": "Berichtshinweise und Übungen",
         "no_feedback": "Es wurde kein Coach-Feedback zurückgegeben.",
         "metric_elbow": "Ellbogenwinkel",
         "metric_elbow_help": "Streckung des Wurfarms im Moment des Releases.",
@@ -244,10 +244,10 @@ Bitte lade einen kurzen, klaren Wurfclip hoch:
         },
     },
     "zh": {
-        "page_title": "AI篮球投篮教练",
-        "eyebrow": "视频动作分析",
-        "title": "AI篮球投篮教练",
-        "desc": "上传一段投篮视频，系统会分析出手动作、下肢发力、身体稳定性，并生成可执行的 AI 教练点评。",
+        "page_title": "篮球投篮动作体检",
+        "eyebrow": "视频投篮报告",
+        "title": "篮球投篮动作体检",
+        "desc": "上传一段或多段投篮视频，获得结构化动作报告：出手姿态、关键指标、投篮稳定性和下一步训练建议。",
         "language": "语言",
         "settings": "本次分析设置",
         "style_label": "对标风格",
@@ -330,7 +330,7 @@ Bitte lade einen kurzen, klaren Wurfclip hoch:
         "stability_limited": "上传 5 次或更多投篮可以获得更可靠的稳定性判断；当前结果仍可作为初步参考。",
         "stability_merge_warning": "这些投篮可能不是同一球员、同一拍摄角度或相似距离，稳定性结果会更不可靠。",
         "stability_help": "这一单元会比较同一段视频里的多次出手。投篮次数越多，动作模式越可信。",
-        "coach_title": "AI教练点评",
+        "coach_title": "报告解读与训练建议",
         "no_feedback": "没有返回教练点评。",
         "metric_elbow": "手肘角度",
         "metric_elbow_help": "出手瞬间投篮手臂的伸展程度。",
@@ -357,15 +357,22 @@ Bitte lade einen kurzen, klaren Wurfclip hoch:
 
 LANDING = {
     "de": {
-        "headline": "Wurfanalyse ab 1,99 Euro testen",
-        "subhead": "Kein App-Download, kein Abo. Lade ein kurzes Wurfvideo hoch und erhalte einen verständlichen Technikbericht mit Score, Messwerten und konkreten Übungen.",
+        "headline": "Basketball Wurf-Check ab 1,99 Euro testen",
+        "subhead": "Ein schneller Technikbericht aus deinem Wurfvideo: Release-Pose, Messwerte, Stabilität über mehrere Würfe und ein klarer Trainingsfokus.",
         "cta": "Video hochladen",
-        "price": "Geplanter Testpreis: 1,99 Euro pro Basisbericht",
+        "price": "Beta-Test: 1,99 Euro pro Basisbericht geplant",
         "proof": "Für Spieler, Eltern und Coaches, die schnell wissen wollen: Was macht meinen Wurf unkonstant?",
+        "badges": ["Kein Abo", "5+ Würfe empfohlen", "Auch mit 1 Clip nutzbar"],
+        "steps_title": "So funktioniert der Test",
+        "steps": [
+            ("1. Filmen", "Nimm 1 bis 5+ Würfe auf. Mehr Würfe machen die Stabilitätsanalyse deutlich stärker."),
+            ("2. Hochladen", "Das Video bleibt kurz und einfach: ganzer Körper sichtbar, gute Beleuchtung, keine Zeitlupe."),
+            ("3. Bericht lesen", "Du bekommst Score, Release-Pose, wichtigste Messwerte, Stabilität und den nächsten Übungsfokus."),
+        ],
         "cards": [
-            ("Was du bekommst", "Form-Score, Release-Pose, Ellbogenwinkel, Kniewinkel, Körperneigung und Coach-Feedback."),
+            ("Was du bekommst", "Form-Score, Release-Pose, Ellbogenwinkel, Kniewinkel, Körperneigung und Stabilitätswerte."),
             ("Wofür es gedacht ist", "Ein schneller Check für Sprungwurf, Freiwurf oder Catch-and-Shoot Technik."),
-            ("Was es nicht ist", "Keine medizinische Beratung und keine Garantie, ob der einzelne Wurf getroffen wurde."),
+            ("Was es nicht ersetzt", "Keinen echten Coach. Es ist ein strukturierter Erstcheck, der bessere Fragen und gezieltere Übungen ermöglicht."),
         ],
         "sample_title": "Beispielbericht ansehen",
         "sample_score": "Form-Score: 88/100",
@@ -396,21 +403,35 @@ LANDING = {
             ("3. Priorität", "Oberkörper beim Hochgehen ruhiger halten, damit der Release noch wiederholbarer wird."),
             ("4. Übungen", "25 einhändige Formwürfe nah am Korb, danach 25 Catch-and-Shoot Würfe aus der Mitteldistanz."),
         ],
+        "sample_image_caption": "Beispiel einer markierten Release-Pose",
+        "trust_title": "Ehrliche Grenzen",
+        "trust_items": [
+            "Der Bericht bewertet sichtbare Technik, nicht ob ein einzelner Wurf getroffen wurde.",
+            "Schlechte Videos liefern weniger Details, aber können trotzdem für einen ersten Hinweis reichen.",
+            "Frontale Clips sind möglich; Seitenansicht oder 45 Grad bleibt für Biomechanik am besten.",
+        ],
         "interest_title": "Würdest du so einen Bericht testen?",
         "interest_text": "Hilf mit, den ersten bezahlten Test zu formen. Die Registrierung ist noch keine Bestellung und dauert weniger als eine Minute.",
         "interest_submit": "Interesse vormerken",
         "interest_hint": "Öffnet ein kurzes Tally-Formular in einem neuen Tab.",
     },
     "en": {
-        "headline": "Test shot analysis from 1.99 Euro",
-        "subhead": "No app download and no subscription. Upload a short shooting clip and get a clear technique report with a score, mechanics, and practical drills.",
+        "headline": "Test a basketball shot form check from 1.99 Euro",
+        "subhead": "A quick technique report from your shooting video: release pose, mechanics, consistency across repeated shots, and one clear training focus.",
         "cta": "Upload video",
-        "price": "Planned test price: 1.99 Euro per basic report",
+        "price": "Beta test: planned 1.99 Euro per basic report",
         "proof": "For players, parents, and coaches who want to know what makes a shot inconsistent.",
+        "badges": ["No subscription", "5+ shots recommended", "Works with one clip"],
+        "steps_title": "How the test works",
+        "steps": [
+            ("1. Film", "Record 1 to 5+ shots. More shots make the consistency section much stronger."),
+            ("2. Upload", "Keep the video simple: full body visible, good light, no slow motion."),
+            ("3. Read report", "Get score, release pose, key metrics, consistency, and the next drill focus."),
+        ],
         "cards": [
-            ("What you get", "Form score, release pose, elbow angle, knee angles, body lean, and coach feedback."),
+            ("What you get", "Form score, release pose, elbow angle, knee angles, body lean, and consistency metrics."),
             ("Best use case", "A fast check for jump shots, free throws, or catch-and-shoot mechanics."),
-            ("What it is not", "Not medical advice and not a guarantee that one shot went in or missed."),
+            ("What it does not replace", "A real coach. It is a structured first pass that helps you ask better questions and train more deliberately."),
         ],
         "sample_title": "View sample report",
         "sample_score": "Form score: 88/100",
@@ -441,21 +462,35 @@ LANDING = {
             ("3. Priority", "Keep the torso quieter on the way up so the release becomes more repeatable."),
             ("4. Drills", "25 one-hand form shots close to the rim, then 25 catch-and-shoot midrange shots."),
         ],
+        "sample_image_caption": "Example annotated release pose",
+        "trust_title": "Honest limits",
+        "trust_items": [
+            "The report evaluates visible mechanics, not whether one shot made or missed.",
+            "Lower-quality videos return fewer details, but can still give a first signal.",
+            "Front-view clips can work; side view or 45 degrees is still best for biomechanics.",
+        ],
         "interest_title": "Would you test this report?",
         "interest_text": "Help shape the first paid test. This is not an order yet and takes less than a minute.",
         "interest_submit": "Register interest",
         "interest_hint": "Opens a short Tally form in a new tab.",
     },
     "zh": {
-        "headline": "先测试 1.99 欧元投篮报告",
-        "subhead": "不用下载 App，也不用订阅。上传一段短投篮视频，获得包含评分、动作指标和训练建议的技术报告。",
+        "headline": "测试 1.99 欧元篮球投篮动作报告",
+        "subhead": "从你的投篮视频生成一份快速技术报告：出手姿态、动作指标、多次投篮稳定性，以及一个最优先训练重点。",
         "cta": "上传视频",
-        "price": "计划测试价：基础报告每份 1.99 欧元",
+        "price": "Beta 测试：计划基础报告每份 1.99 欧元",
         "proof": "适合想快速知道“为什么投篮不稳定”的球员、家长和教练。",
+        "badges": ["无需订阅", "建议 5 次以上投篮", "一个视频也可分析"],
+        "steps_title": "测试流程",
+        "steps": [
+            ("1. 拍摄", "拍 1 到 5 次以上投篮。投篮次数越多，稳定性分析越有价值。"),
+            ("2. 上传", "视频尽量简单：全身可见、光线清楚、不要慢动作。"),
+            ("3. 看报告", "获得评分、出手姿态、关键指标、稳定性和下一步训练重点。"),
+        ],
         "cards": [
-            ("你会得到什么", "动作评分、出手姿态图、手肘角度、膝盖角度、身体前倾和教练反馈。"),
+            ("你会得到什么", "动作评分、出手姿态图、手肘角度、膝盖角度、身体前倾和稳定性指标。"),
             ("适合什么场景", "快速检查跳投、罚球或接球投的基础动作。"),
-            ("它不是什么", "不是医疗建议，也不判断单次投篮一定进或不进。"),
+            ("它不能替代什么", "它不能替代真人教练，而是一个结构化初筛，帮你更清楚地提问和训练。"),
         ],
         "sample_title": "查看样例报告",
         "sample_score": "动作评分：88/100",
@@ -485,6 +520,13 @@ LANDING = {
             ("2. 关键指标", "手肘角度 150 度，膝盖伸展 57 度，身体前倾稳定。"),
             ("3. 优先级", "向上发力时保持上半身更安静，让出手更可重复。"),
             ("4. 训练", "近筐单手定型投 25 个，再做中距离接球投 25 个。"),
+        ],
+        "sample_image_caption": "出手姿态标注示例",
+        "trust_title": "诚实的边界",
+        "trust_items": [
+            "报告评估可见动作，不判断某一次投篮是否命中。",
+            "视频质量较低时会减少细节，但仍可给出初步方向。",
+            "正面视频也可以尝试；侧面或 45 度角仍然最适合生物力学分析。",
         ],
         "interest_title": "你会愿意测试这份报告吗？",
         "interest_text": "帮我们确定第一版付费测试的方向。这还不是正式订单，填写不到一分钟。",
@@ -717,6 +759,7 @@ def render_stability(stability):
 
 def render_landing(lang_code):
     landing = LANDING[lang_code]
+    badge_html = "".join(f"<span>{badge}</span>" for badge in landing["badges"])
     st.markdown(
         f"""
         <section class="market-hero">
@@ -724,13 +767,32 @@ def render_landing(lang_code):
                 <div class="eyebrow">{t["eyebrow"]}</div>
                 <h1>{landing["headline"]}</h1>
                 <p>{landing["subhead"]}</p>
+                <div class="market-badges">{badge_html}</div>
                 <div class="market-price">{landing["price"]}</div>
+                <div class="market-actions">
+                    <a class="market-primary" href="#analysis-tool">{landing["cta"]}</a>
+                    <a class="market-secondary" href="{TALLY_INTEREST_URL}" target="_blank" rel="noopener noreferrer">{landing["interest_submit"]}</a>
+                </div>
                 <div class="market-proof">{landing["proof"]}</div>
             </div>
         </section>
         """,
         unsafe_allow_html=True,
     )
+
+    st.markdown(f"#### {landing['steps_title']}")
+    step_cols = st.columns(3)
+    for col, (title, body) in zip(step_cols, landing["steps"]):
+        with col:
+            st.markdown(
+                f"""
+                <div class="step-card">
+                    <strong>{title}</strong>
+                    <p>{body}</p>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
 
     card_cols = st.columns(3)
     for col, (title, body) in zip(card_cols, landing["cards"]):
@@ -752,6 +814,9 @@ def render_landing(lang_code):
         st.metric("Score", landing["sample_score"])
         for item in landing["sample_metrics"]:
             st.caption(item)
+        sample_image_path = BASE_DIR / "release_analyzed.jpg"
+        if sample_image_path.exists():
+            st.image(str(sample_image_path), caption=landing["sample_image_caption"], use_container_width=True)
     with report_cols[1]:
         for title, body in landing["report_sections"]:
             st.markdown(
@@ -759,6 +824,19 @@ def render_landing(lang_code):
                 <div class="report-row">
                     <strong>{title}</strong>
                     <p>{body}</p>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+
+    st.markdown(f"#### {landing['trust_title']}")
+    trust_cols = st.columns(3)
+    for col, item in zip(trust_cols, landing["trust_items"]):
+        with col:
+            st.markdown(
+                f"""
+                <div class="trust-note">
+                    {item}
                 </div>
                 """,
                 unsafe_allow_html=True,
@@ -776,6 +854,7 @@ def render_landing(lang_code):
     st.caption(landing["interest_hint"])
 
     st.divider()
+    st.markdown('<div id="analysis-tool"></div>', unsafe_allow_html=True)
 
 
 st.set_page_config(
@@ -840,33 +919,86 @@ st.markdown(
     .market-hero {
         border: 1px solid rgba(127, 127, 127, 0.24);
         border-radius: 8px;
-        padding: 1.2rem;
-        margin-bottom: 1rem;
+        padding: 1.35rem 1.45rem;
+        margin-bottom: 1.15rem;
         background: rgba(127, 127, 127, 0.08);
     }
     .market-copy h1 {
-        font-size: 2.35rem;
+        font-size: 2.45rem;
         line-height: 1.08;
         margin: 0;
+        max-width: 900px;
     }
     .market-copy p {
         max-width: 820px;
         opacity: 0.82;
         margin: 0.7rem 0 0;
     }
+    .market-badges {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.45rem;
+        margin-top: 0.9rem;
+    }
+    .market-badges span {
+        border: 1px solid rgba(127, 127, 127, 0.28);
+        border-radius: 999px;
+        padding: 0.28rem 0.58rem;
+        font-size: 0.86rem;
+        font-weight: 700;
+        background: rgba(255, 255, 255, 0.04);
+    }
     .market-price {
         display: inline-block;
         margin-top: 0.9rem;
         padding: 0.45rem 0.7rem;
-        border: 1px solid rgba(248, 113, 113, 0.55);
+        border: 1px solid rgba(59, 130, 246, 0.45);
         border-radius: 6px;
-        color: #ff4b4b;
+        color: #3b82f6;
         font-weight: 800;
+    }
+    .market-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.55rem;
+        margin-top: 0.9rem;
+    }
+    .market-actions a {
+        border-radius: 6px;
+        padding: 0.55rem 0.82rem;
+        font-weight: 800;
+        text-decoration: none;
+    }
+    .market-primary {
+        background: #ff4b4b;
+        color: #ffffff !important;
+    }
+    .market-secondary {
+        border: 1px solid rgba(127, 127, 127, 0.30);
+        color: inherit !important;
+        background: rgba(255, 255, 255, 0.04);
     }
     .market-proof {
         margin-top: 0.65rem;
         opacity: 0.74;
         font-size: 0.95rem;
+    }
+    .step-card {
+        border: 1px solid rgba(59, 130, 246, 0.24);
+        border-radius: 8px;
+        padding: 0.95rem;
+        min-height: 142px;
+        background: rgba(59, 130, 246, 0.08);
+        margin-bottom: 0.75rem;
+    }
+    .step-card strong {
+        display: block;
+        font-size: 1.02rem;
+        margin-bottom: 0.4rem;
+    }
+    .step-card p {
+        opacity: 0.80;
+        margin: 0;
     }
     .market-card {
         border: 1px solid rgba(127, 127, 127, 0.24);
@@ -874,6 +1006,7 @@ st.markdown(
         padding: 0.95rem;
         min-height: 145px;
         background: rgba(127, 127, 127, 0.07);
+        margin-bottom: 0.5rem;
     }
     .market-card h3 {
         font-size: 1.05rem;
@@ -891,6 +1024,24 @@ st.markdown(
     .report-row p {
         margin: 0.2rem 0 0;
         opacity: 0.78;
+    }
+    .trust-note {
+        border: 1px solid rgba(34, 197, 94, 0.22);
+        border-radius: 8px;
+        padding: 0.8rem 0.9rem;
+        min-height: 96px;
+        background: rgba(34, 197, 94, 0.07);
+        color: inherit;
+        opacity: 0.86;
+        margin-bottom: 0.7rem;
+    }
+    @media (max-width: 640px) {
+        .market-copy h1 {
+            font-size: 2rem;
+        }
+        .hero h1 {
+            font-size: 1.85rem;
+        }
     }
     </style>
     """,
