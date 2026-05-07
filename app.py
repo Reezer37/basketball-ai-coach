@@ -14,7 +14,7 @@ from PIL import Image
 
 
 BASE_DIR = Path(__file__).resolve().parent
-TALLY_INTEREST_URL = "https://tally.so/r/oblEQO"
+DEFAULT_FEEDBACK_URL = "https://tally.so/r/oblEQO"
 
 LANG_OPTIONS = {
     "Deutsch": "de",
@@ -440,10 +440,6 @@ LANDING = {
             "Schlechte Videos liefern weniger Details, aber können trotzdem für einen ersten Hinweis reichen.",
             "Frontale Clips sind möglich; Seitenansicht oder 45 Grad bleibt für Biomechanik am besten.",
         ],
-        "interest_title": "Würdest du so einen Bericht testen?",
-        "interest_text": "Hilf mit, den ersten bezahlten Test zu formen. Die Registrierung ist noch keine Bestellung und dauert weniger als eine Minute.",
-        "interest_submit": "Interesse vormerken",
-        "interest_hint": "Öffnet ein kurzes Tally-Formular in einem neuen Tab.",
         "payment_submit": "Beta-Bericht kaufen",
         "payment_hint": "Öffnet den sicheren Stripe-Bezahlvorgang in einem neuen Tab.",
         "payment_note": "Nach der Zahlung kommst du zurück und kannst dein Wurfvideo hochladen.",
@@ -502,10 +498,6 @@ LANDING = {
             "Lower-quality videos return fewer details, but can still give a first signal.",
             "Front-view clips can work; side view or 45 degrees is still best for biomechanics.",
         ],
-        "interest_title": "Would you test this report?",
-        "interest_text": "Help shape the first paid test. This is not an order yet and takes less than a minute.",
-        "interest_submit": "Register interest",
-        "interest_hint": "Opens a short Tally form in a new tab.",
         "payment_submit": "Buy beta report",
         "payment_hint": "Opens the secure Stripe checkout in a new tab.",
         "payment_note": "After payment, return here and upload your shooting video.",
@@ -564,10 +556,6 @@ LANDING = {
             "视频质量较低时会减少细节，但仍可给出初步方向。",
             "正面视频也可以尝试；侧面或 45 度角仍然最适合生物力学分析。",
         ],
-        "interest_title": "你会愿意测试这份报告吗？",
-        "interest_text": "帮我们确定第一版付费测试的方向。这还不是正式订单，填写不到一分钟。",
-        "interest_submit": "登记兴趣",
-        "interest_hint": "会在新标签页打开一个简短的 Tally 表单。",
         "payment_submit": "购买 Beta 报告",
         "payment_hint": "会在新标签页打开安全的 Stripe 支付页面。",
         "payment_note": "付款后回到这里上传你的投篮视频。",
@@ -808,9 +796,6 @@ def render_stability(stability):
 def render_landing(lang_code, payment_url=""):
     landing = LANDING[lang_code]
     badge_html = "".join(f"<span>{badge}</span>" for badge in landing["badges"])
-    interest_label = landing["interest_submit"]
-    interest_hint = landing["interest_hint"]
-    interest_note = landing["interest_text"]
     st.markdown(
         f"""
         <section class="market-hero">
@@ -823,7 +808,7 @@ def render_landing(lang_code, payment_url=""):
                 <div class="market-actions">
                     <a class="market-primary" href="#analysis-tool">{landing["cta"]}</a>
                 </div>
-                <div class="market-note">{landing["payment_note"] if payment_url else interest_note}</div>
+                <div class="market-note">{landing["payment_note"]}</div>
                 <div class="market-proof">{landing["proof"]}</div>
             </div>
         </section>
@@ -898,11 +883,6 @@ def render_landing(lang_code, payment_url=""):
     for index, question in enumerate(landing["questions"]):
         with q_cols[index % 2]:
             st.markdown(f"- {question}")
-
-    st.markdown(f"#### {landing['interest_title']}")
-    st.caption(interest_note)
-    st.link_button(interest_label, TALLY_INTEREST_URL, type="primary")
-    st.caption(interest_hint)
 
     st.divider()
     st.markdown('<div id="analysis-tool"></div>', unsafe_allow_html=True)
@@ -1127,7 +1107,7 @@ max_upload_mb = get_int_secret("MAX_UPLOAD_MB", 180, 1, 500)
 analysis_cooldown_seconds = get_int_secret("ANALYSIS_COOLDOWN_SECONDS", 20, 0, 300)
 ai_max_output_tokens = get_int_secret("AI_COACH_MAX_OUTPUT_TOKENS", 650, 128, 1000)
 payment_link_url = clean_external_url(get_secret("STRIPE_PAYMENT_LINK_URL", ""))
-feedback_form_url = clean_external_url(get_secret("FEEDBACK_FORM_URL", TALLY_INTEREST_URL))
+feedback_form_url = clean_external_url(get_secret("FEEDBACK_FORM_URL", DEFAULT_FEEDBACK_URL))
 support_email = get_secret("SUPPORT_EMAIL", "").strip()
 
 render_landing(lang_code, payment_link_url)
