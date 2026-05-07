@@ -67,6 +67,16 @@ TEXT = {
         "upload_summary": "{count} video(s) selected.",
         "cooldown": "Please wait {seconds} more seconds before starting another analysis.",
         "start_label": "Start analysis",
+        "payment_required_title": "Step 2: buy the beta report",
+        "payment_required_body": "Your video is ready. Pay securely first, then return here and start the analysis.",
+        "payment_button_label": "Pay 1.99 Euro with Stripe",
+        "payment_confirm_label": "I have completed payment and want to generate the report.",
+        "payment_pending": "Please complete payment first, then tick the confirmation box to start the report.",
+        "payment_link_missing": "Payment link is not configured yet, so analysis is open for testing.",
+        "support_title": "Feedback, problems, or refund request",
+        "support_body": "If the report fails, feels wrong, or you want a refund, contact us with the payment email and a short note.",
+        "support_button": "Send feedback",
+        "support_email_label": "Support email",
         "quick_label": "Quick feedback",
         "detailed_label": "Detailed report",
         "video_tab": "Shot video",
@@ -177,6 +187,16 @@ Please upload a short, clear shooting clip:
         "upload_summary": "{count} Video(s) ausgewählt.",
         "cooldown": "Bitte warte noch {seconds} Sekunden, bevor du die nächste Analyse startest.",
         "start_label": "Analyse starten",
+        "payment_required_title": "Schritt 2: Beta-Bericht kaufen",
+        "payment_required_body": "Dein Video ist bereit. Bezahle zuerst sicher über Stripe, komm dann hierher zurück und starte die Analyse.",
+        "payment_button_label": "1,99 Euro mit Stripe bezahlen",
+        "payment_confirm_label": "Ich habe bezahlt und möchte den Bericht erstellen.",
+        "payment_pending": "Bitte bezahle zuerst und markiere danach die Bestätigung, um den Bericht zu starten.",
+        "payment_link_missing": "Der Zahlungslink ist noch nicht konfiguriert. Die Analyse bleibt deshalb zum Testen offen.",
+        "support_title": "Feedback, Problem oder Rückerstattung",
+        "support_body": "Wenn der Bericht fehlschlägt, unpassend wirkt oder du eine Rückerstattung möchtest, kontaktiere uns mit Zahlungs-E-Mail und kurzer Beschreibung.",
+        "support_button": "Feedback senden",
+        "support_email_label": "Support-E-Mail",
         "quick_label": "Kurzfeedback",
         "detailed_label": "Detailbericht",
         "video_tab": "Wurfvideo",
@@ -287,6 +307,16 @@ Bitte lade einen kurzen, klaren Wurfclip hoch:
         "upload_summary": "已选择 {count} 个视频。",
         "cooldown": "请再等待 {seconds} 秒后开始下一次分析。",
         "start_label": "开始分析",
+        "payment_required_title": "第二步：购买 Beta 报告",
+        "payment_required_body": "视频已准备好。请先通过 Stripe 安全付款，然后回到这里开始生成报告。",
+        "payment_button_label": "通过 Stripe 支付 1.99 欧元",
+        "payment_confirm_label": "我已完成付款，并希望生成报告。",
+        "payment_pending": "请先完成付款，然后勾选确认框开始生成报告。",
+        "payment_link_missing": "付款链接尚未配置，所以当前仍开放测试分析。",
+        "support_title": "反馈、问题或退款申请",
+        "support_body": "如果报告失败、结果明显不满意，或你想申请退款，请附上付款邮箱和简短说明联系我们。",
+        "support_button": "提交反馈",
+        "support_email_label": "客服邮箱",
         "quick_label": "快速点评",
         "detailed_label": "深度报告",
         "video_tab": "投篮视频",
@@ -569,6 +599,15 @@ def get_int_secret(name, default, min_value=None, max_value=None):
     return value
 
 
+def clean_external_url(url):
+    url = (url or "").strip()
+    if not url:
+        return ""
+    if url.startswith(("http://", "https://", "mailto:")):
+        return url
+    return f"https://{url}"
+
+
 def is_supported_video(uploaded_file):
     mime_type = (getattr(uploaded_file, "type", "") or "").lower()
     filename = (getattr(uploaded_file, "name", "") or "").lower()
@@ -769,10 +808,9 @@ def render_stability(stability):
 def render_landing(lang_code, payment_url=""):
     landing = LANDING[lang_code]
     badge_html = "".join(f"<span>{badge}</span>" for badge in landing["badges"])
-    purchase_url = payment_url or TALLY_INTEREST_URL
-    purchase_label = landing["payment_submit"] if payment_url else landing["interest_submit"]
-    purchase_hint = landing["payment_hint"] if payment_url else landing["interest_hint"]
-    purchase_note = landing["payment_note"] if payment_url else landing["interest_text"]
+    interest_label = landing["interest_submit"]
+    interest_hint = landing["interest_hint"]
+    interest_note = landing["interest_text"]
     st.markdown(
         f"""
         <section class="market-hero">
@@ -784,9 +822,8 @@ def render_landing(lang_code, payment_url=""):
                 <div class="market-price">{landing["price"]}</div>
                 <div class="market-actions">
                     <a class="market-primary" href="#analysis-tool">{landing["cta"]}</a>
-                    <a class="market-secondary" href="{purchase_url}" target="_blank" rel="noopener noreferrer">{purchase_label}</a>
                 </div>
-                <div class="market-note">{purchase_note}</div>
+                <div class="market-note">{landing["payment_note"] if payment_url else interest_note}</div>
                 <div class="market-proof">{landing["proof"]}</div>
             </div>
         </section>
@@ -863,12 +900,24 @@ def render_landing(lang_code, payment_url=""):
             st.markdown(f"- {question}")
 
     st.markdown(f"#### {landing['interest_title']}")
-    st.caption(purchase_note)
-    st.link_button(purchase_label, purchase_url, type="primary")
-    st.caption(purchase_hint)
+    st.caption(interest_note)
+    st.link_button(interest_label, TALLY_INTEREST_URL, type="primary")
+    st.caption(interest_hint)
 
     st.divider()
     st.markdown('<div id="analysis-tool"></div>', unsafe_allow_html=True)
+
+
+def render_support_box(feedback_url, support_email):
+    st.markdown(f"#### {t['support_title']}")
+    st.caption(t["support_body"])
+    support_cols = st.columns([1, 1], gap="small")
+    with support_cols[0]:
+        if feedback_url:
+            st.link_button(t["support_button"], feedback_url, use_container_width=True)
+    with support_cols[1]:
+        if support_email:
+            st.markdown(f"{t['support_email_label']}: [{support_email}](mailto:{support_email})")
 
 
 st.set_page_config(
@@ -1077,7 +1126,9 @@ t = TEXT[lang_code]
 max_upload_mb = get_int_secret("MAX_UPLOAD_MB", 180, 1, 500)
 analysis_cooldown_seconds = get_int_secret("ANALYSIS_COOLDOWN_SECONDS", 20, 0, 300)
 ai_max_output_tokens = get_int_secret("AI_COACH_MAX_OUTPUT_TOKENS", 650, 128, 1000)
-payment_link_url = get_secret("STRIPE_PAYMENT_LINK_URL", "").strip()
+payment_link_url = clean_external_url(get_secret("STRIPE_PAYMENT_LINK_URL", ""))
+feedback_form_url = clean_external_url(get_secret("FEEDBACK_FORM_URL", TALLY_INTEREST_URL))
+support_email = get_secret("SUPPORT_EMAIL", "").strip()
 
 render_landing(lang_code, payment_link_url)
 
@@ -1152,13 +1203,31 @@ with settings_col:
             next_signature = [(item["name"], len(item["bytes"])) for item in uploaded_videos]
             if previous_signature != next_signature:
                 clear_previous_analysis()
+                st.session_state["payment_confirmed"] = False
             st.session_state["uploaded_videos"] = uploaded_videos
             current_videos = uploaded_videos
             st.caption(t["upload_summary"].format(count=len(uploaded_videos)))
     elif "uploaded_videos" in st.session_state:
         clear_previous_analysis()
         st.session_state.pop("uploaded_videos", None)
+        st.session_state["payment_confirmed"] = False
         current_videos = []
+
+    if current_videos and payment_link_url:
+        st.markdown(f"#### {t['payment_required_title']}")
+        st.caption(t["payment_required_body"])
+        st.link_button(t["payment_button_label"], payment_link_url, type="primary", use_container_width=True)
+        st.caption(payment_link_url)
+        payment_confirmed = st.checkbox(
+            t["payment_confirm_label"],
+            key="payment_confirmed",
+        )
+        if not payment_confirmed:
+            st.info(t["payment_pending"])
+    elif current_videos and not payment_link_url:
+        st.info(t["payment_link_missing"])
+
+    render_support_box(feedback_form_url, support_email)
 
     provider = server_provider if server_provider in {"auto", "openai", "gemini"} else "auto"
     openai_key = ""
@@ -1200,7 +1269,8 @@ with media_col:
         else:
             st.info(t["empty_pose"])
 
-can_analyze = bool(current_videos)
+payment_confirmed = bool(st.session_state.get("payment_confirmed"))
+can_analyze = bool(current_videos) and (not payment_link_url or payment_confirmed)
 
 if st.button(t["start_label"], type="primary", disabled=not can_analyze, use_container_width=True):
     now = time.monotonic()
