@@ -688,14 +688,14 @@ else:
     prompt += build_stability_context(load_stability(args.stability), args.lang)
 
 status_text = {
-    "en": "Generating AI coach feedback...",
-    "de": "Erstelle AI Coach-Feedback...",
-    "zh": "正在生成 AI 教练点评...",
+    "en": "Generating report notes...",
+    "de": "Erstelle Berichtshinweise...",
+    "zh": "正在生成报告解读...",
 }[args.lang]
 heading = {
-    "en": "===== AI Coach Feedback =====",
-    "de": "===== AI Coach-Feedback =====",
-    "zh": "===== AI教练点评 =====",
+    "en": "===== Report Notes =====",
+    "de": "===== Berichtshinweise =====",
+    "zh": "===== 报告解读 =====",
 }[args.lang]
 
 print(status_text, flush=True)

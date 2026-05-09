@@ -5,6 +5,7 @@ import subprocess
 import sys
 import tempfile
 import time
+from io import BytesIO
 from pathlib import Path
 
 import imageio.v2 as imageio
@@ -61,7 +62,7 @@ TEXT = {
         "openai_key_label": "OpenAI API key",
         "gemini_key_label": "Gemini API key",
         "model_label": "Model override (optional)",
-        "missing_key": "Add an API key in AI API settings before generating coach feedback.",
+        "missing_key": "Add an API key in AI API settings before generating the report notes.",
         "file_too_large": "This video is too large. Please upload a file up to {max_mb} MB. If you recorded on a phone, use a shorter clip or 1080p instead of 4K/HDR.",
         "unsupported_file": "Please choose a video file. Photos or unsupported files cannot be analyzed.",
         "upload_summary": "{count} video(s) selected.",
@@ -70,9 +71,11 @@ TEXT = {
         "payment_required_title": "Step 2: buy the beta report",
         "payment_required_body": "Your video is ready. Pay securely first, then return here and start the analysis.",
         "payment_button_label": "Pay 1.99 Euro with Stripe",
-        "payment_confirm_label": "I have completed payment and want to generate the report.",
-        "payment_pending": "Please complete payment first, then tick the confirmation box to start the report.",
+        "payment_pending": "Payment is required before report generation. After checkout, return through the payment success link to unlock analysis.",
+        "payment_unlocked": "Payment return detected. You can now generate the report.",
+        "payment_config_missing": "Payment is enabled, but PAYMENT_ACCESS_TOKEN is missing. Add it to Streamlit Secrets and set the Stripe success URL to return with that token.",
         "payment_link_missing": "Payment link is not configured yet, so analysis is open for testing.",
+        "download_report": "Download report PDF",
         "support_title": "Feedback, problems, or refund request",
         "support_body": "If the report fails, feels wrong, or you want a refund, contact us with the payment email and a short note.",
         "support_button": "Send feedback",
@@ -83,7 +86,7 @@ TEXT = {
         "pose_tab": "Release pose",
         "empty_pose": "Run analysis to generate the annotated release pose.",
         "waiting": "Upload a video to begin.",
-        "spinner": "Analyzing mechanics and preparing coach feedback...",
+        "spinner": "Analyzing mechanics and preparing report notes...",
         "done": "Analysis complete.",
         "analysis_error": "Motion analysis failed.",
         "result_missing": "Analysis did not produce a valid result file.",
@@ -101,11 +104,11 @@ Please upload a short, clear shooting clip:
 - Include the full motion: dip/load, jump or extension, release, and follow-through
 """,
         "limited_title": "Limited video analysis",
-        "limited_guidance": "The app could not extract reliable body landmarks from this clip, so exact angle metrics are unavailable. It will still provide basic coach feedback. A clearer full-body side-view video can unlock more detailed biomechanics.",
+        "limited_guidance": "The app could not extract reliable body landmarks from this clip, so exact angle metrics are unavailable. It will still provide basic report notes. A clearer full-body side-view video can unlock more detailed biomechanics.",
         "debug_details": "Analysis diagnostics",
-        "timing_warning": "The pose was detected, but the loading-to-release timing may be unreliable for this clip. The coach feedback will focus more on visible posture metrics.",
-        "coach_error": "AI coach feedback returned an error:",
-        "coach_timeout": "AI coach feedback timed out. Please retry later or use quick feedback.",
+        "timing_warning": "The pose was detected, but the loading-to-release timing may be unreliable for this clip. The report will focus more on visible posture metrics.",
+        "coach_error": "Report notes returned an error:",
+        "coach_timeout": "Report notes timed out. Please retry later or use quick feedback.",
         "score_title": "Form score",
         "score_label": "Shot mechanics",
         "score_caption": "A form-quality score for balance, timing, and repeatability. It is not a make-percentage prediction.",
@@ -121,7 +124,7 @@ Please upload a short, clear shooting clip:
         "stability_merge_warning": "These shots may not share the same player, camera angle, or distance. Consistency results may be less reliable.",
         "stability_help": "This section compares repeated releases in the same clip. More shots make the pattern more trustworthy.",
         "coach_title": "Report notes and drills",
-        "no_feedback": "No coach feedback was returned.",
+        "no_feedback": "No report notes were returned.",
         "metric_elbow": "Elbow angle",
         "metric_elbow_help": "Release-arm extension at the moment of release.",
         "metric_height": "Release height",
@@ -181,7 +184,7 @@ Please upload a short, clear shooting clip:
         "openai_key_label": "OpenAI API key",
         "gemini_key_label": "Gemini API key",
         "model_label": "Modell überschreiben (optional)",
-        "missing_key": "Bitte zuerst einen API key konfigurieren, um Coach-Feedback zu erzeugen.",
+        "missing_key": "Bitte zuerst einen API key konfigurieren, um Berichtshinweise zu erzeugen.",
         "file_too_large": "Dieses Video ist zu groß. Bitte lade maximal {max_mb} MB hoch. Wenn du am Handy filmst, nutze einen kürzeren Clip oder 1080p statt 4K/HDR.",
         "unsupported_file": "Bitte wähle eine Videodatei aus. Fotos oder nicht unterstützte Dateien können nicht analysiert werden.",
         "upload_summary": "{count} Video(s) ausgewählt.",
@@ -190,9 +193,11 @@ Please upload a short, clear shooting clip:
         "payment_required_title": "Schritt 2: Beta-Bericht kaufen",
         "payment_required_body": "Dein Video ist bereit. Bezahle zuerst sicher über Stripe, komm dann hierher zurück und starte die Analyse.",
         "payment_button_label": "1,99 Euro mit Stripe bezahlen",
-        "payment_confirm_label": "Ich habe bezahlt und möchte den Bericht erstellen.",
-        "payment_pending": "Bitte bezahle zuerst und markiere danach die Bestätigung, um den Bericht zu starten.",
+        "payment_pending": "Vor der Berichtserstellung ist die Zahlung erforderlich. Kehre nach dem Checkout über den Erfolgslink zurück, um die Analyse freizuschalten.",
+        "payment_unlocked": "Zahlungsrückkehr erkannt. Du kannst den Bericht jetzt erstellen.",
+        "payment_config_missing": "Zahlung ist aktiviert, aber PAYMENT_ACCESS_TOKEN fehlt. Bitte in Streamlit Secrets ergänzen und in Stripe als Erfolgslink hinterlegen.",
         "payment_link_missing": "Der Zahlungslink ist noch nicht konfiguriert. Die Analyse bleibt deshalb zum Testen offen.",
+        "download_report": "Bericht als PDF herunterladen",
         "support_title": "Feedback, Problem oder Rückerstattung",
         "support_body": "Wenn der Bericht fehlschlägt, unpassend wirkt oder du eine Rückerstattung möchtest, kontaktiere uns mit Zahlungs-E-Mail und kurzer Beschreibung.",
         "support_button": "Feedback senden",
@@ -203,7 +208,7 @@ Please upload a short, clear shooting clip:
         "pose_tab": "Release-Pose",
         "empty_pose": "Starte die Analyse, um die markierte Release-Pose zu erzeugen.",
         "waiting": "Lade ein Video hoch, um zu beginnen.",
-        "spinner": "Analysiere Wurfmechanik und erstelle Coach-Feedback...",
+        "spinner": "Analysiere Wurfmechanik und erstelle Berichtshinweise...",
         "done": "Analyse abgeschlossen.",
         "analysis_error": "Bewegungsanalyse fehlgeschlagen.",
         "result_missing": "Die Analyse hat keine gültige Ergebnisdatei erzeugt.",
@@ -221,11 +226,11 @@ Bitte lade einen kurzen, klaren Wurfclip hoch:
 - Vollständige Bewegung: Dip/Load, Streckung, Release und Follow-through
 """,
         "limited_title": "Eingeschränkte Videoanalyse",
-        "limited_guidance": "Das System konnte aus diesem Clip keine stabilen Körperpunkte extrahieren. Exakte Winkelwerte werden deshalb nicht angezeigt, aber du erhältst trotzdem grundlegendes Coach-Feedback. Ein klareres Ganzkörpervideo von der Seite ermöglicht detailliertere Biomechanik.",
+        "limited_guidance": "Das System konnte aus diesem Clip keine stabilen Körperpunkte extrahieren. Exakte Winkelwerte werden deshalb nicht angezeigt, aber du erhältst trotzdem grundlegende Berichtshinweise. Ein klareres Ganzkörpervideo von der Seite ermöglicht detailliertere Biomechanik.",
         "debug_details": "Analyse-Diagnose",
         "timing_warning": "Die Pose wurde erkannt, aber der Timing-Wert vom Load bis zum Release ist bei diesem Clip möglicherweise unzuverlässig.",
-        "coach_error": "AI Coach-Feedback hat einen Fehler zurückgegeben:",
-        "coach_timeout": "AI Coach-Feedback hat zu lange gedauert. Bitte später erneut versuchen oder Kurzfeedback nutzen.",
+        "coach_error": "Berichtshinweise haben einen Fehler zurückgegeben:",
+        "coach_timeout": "Berichtshinweise haben zu lange gedauert. Bitte später erneut versuchen oder Kurzfeedback nutzen.",
         "score_title": "Form-Score",
         "score_label": "Wurfmechanik",
         "score_caption": "Ein Qualitätswert für Balance, Timing und Wiederholbarkeit. Er ist keine Trefferwahrscheinlichkeit.",
@@ -241,7 +246,7 @@ Bitte lade einen kurzen, klaren Wurfclip hoch:
         "stability_merge_warning": "Diese Würfe wirken möglicherweise nicht wie gleiche Person, gleicher Kamerawinkel oder gleiche Distanz. Die Stabilitätswerte können dadurch unzuverlässiger sein.",
         "stability_help": "Dieser Bereich vergleicht wiederholte Releases im selben Clip. Mehr Würfe machen das Muster verlässlicher.",
         "coach_title": "Berichtshinweise und Übungen",
-        "no_feedback": "Es wurde kein Coach-Feedback zurückgegeben.",
+        "no_feedback": "Es wurden keine Berichtshinweise zurückgegeben.",
         "metric_elbow": "Ellbogenwinkel",
         "metric_elbow_help": "Streckung des Wurfarms im Moment des Releases.",
         "metric_height": "Release-Höhe",
@@ -301,7 +306,7 @@ Bitte lade einen kurzen, klaren Wurfclip hoch:
         "openai_key_label": "OpenAI API key",
         "gemini_key_label": "Gemini API key",
         "model_label": "模型覆盖（可选）",
-        "missing_key": "请先在 AI API 设置中填写 API key，再生成教练点评。",
+        "missing_key": "请先在 API 设置中填写 key，再生成报告解读。",
         "file_too_large": "这个视频文件太大。请上传不超过 {max_mb} MB 的视频。如果用手机拍摄，请缩短视频，或使用 1080p 而不是 4K/HDR。",
         "unsupported_file": "请选择视频文件。照片或不支持的文件无法分析。",
         "upload_summary": "已选择 {count} 个视频。",
@@ -310,9 +315,11 @@ Bitte lade einen kurzen, klaren Wurfclip hoch:
         "payment_required_title": "第二步：购买 Beta 报告",
         "payment_required_body": "视频已准备好。请先通过 Stripe 安全付款，然后回到这里开始生成报告。",
         "payment_button_label": "通过 Stripe 支付 1.99 欧元",
-        "payment_confirm_label": "我已完成付款，并希望生成报告。",
-        "payment_pending": "请先完成付款，然后勾选确认框开始生成报告。",
+        "payment_pending": "生成报告前需要先完成付款。付款后请通过支付成功页面返回，系统会解锁分析。",
+        "payment_unlocked": "已检测到付款返回链接，现在可以生成报告。",
+        "payment_config_missing": "已启用付款，但缺少 PAYMENT_ACCESS_TOKEN。请在 Streamlit Secrets 中添加，并在 Stripe 成功返回链接中使用。",
         "payment_link_missing": "付款链接尚未配置，所以当前仍开放测试分析。",
+        "download_report": "下载 PDF 报告",
         "support_title": "反馈、问题或退款申请",
         "support_body": "如果报告失败、结果明显不满意，或你想申请退款，请附上付款邮箱和简短说明联系我们。",
         "support_button": "提交反馈",
@@ -323,7 +330,7 @@ Bitte lade einen kurzen, klaren Wurfclip hoch:
         "pose_tab": "出手姿态",
         "empty_pose": "完成分析后会生成带关键点的出手姿态图。",
         "waiting": "先上传一段视频开始分析。",
-        "spinner": "正在分析投篮动作并生成教练反馈...",
+        "spinner": "正在分析投篮动作并生成报告解读...",
         "done": "分析完成！",
         "analysis_error": "动作分析失败。",
         "result_missing": "分析没有生成有效的结果文件。",
@@ -341,11 +348,11 @@ Bitte lade einen kurzen, klaren Wurfclip hoch:
 - 包含完整动作：下蹲蓄力、起跳或伸展、出手、随球动作
 """,
         "limited_title": "基础视频分析",
-        "limited_guidance": "系统暂时无法从这段视频中稳定提取人体关键点，所以不会显示精确角度指标。但仍会给出基础教练点评；如果上传更清楚的侧面全身视频，可以获得更详细的生物力学分析。",
+        "limited_guidance": "系统暂时无法从这段视频中稳定提取人体关键点，所以不会显示精确角度指标。但仍会给出基础报告解读；如果上传更清楚的侧面全身视频，可以获得更详细的生物力学分析。",
         "debug_details": "分析诊断信息",
-        "timing_warning": "系统已识别到人体姿态，但这段视频的“蓄力到出手节奏”指标可能不稳定。本次点评会更多参考可见姿态指标。",
-        "coach_error": "AI 教练点评生成失败：",
-        "coach_timeout": "AI 教练点评响应超时。可以稍后重试，或改用快速点评。",
+        "timing_warning": "系统已识别到人体姿态，但这段视频的“蓄力到出手节奏”指标可能不稳定。本次报告会更多参考可见姿态指标。",
+        "coach_error": "报告解读生成失败：",
+        "coach_timeout": "报告解读响应超时。可以稍后重试，或改用快速点评。",
         "score_title": "综合评分",
         "score_label": "投篮动作",
         "score_caption": "这是关于平衡、节奏和可重复性的动作质量评分，不代表这次投篮的命中率。",
@@ -361,7 +368,7 @@ Bitte lade einen kurzen, klaren Wurfclip hoch:
         "stability_merge_warning": "这些投篮可能不是同一球员、同一拍摄角度或相似距离，稳定性结果会更不可靠。",
         "stability_help": "这一单元会比较同一段视频里的多次出手。投篮次数越多，动作模式越可信。",
         "coach_title": "报告解读与训练建议",
-        "no_feedback": "没有返回教练点评。",
+        "no_feedback": "没有返回报告解读。",
         "metric_elbow": "手肘角度",
         "metric_elbow_help": "出手瞬间投篮手臂的伸展程度。",
         "metric_height": "出手高度",
@@ -594,6 +601,139 @@ def clean_external_url(url):
     if url.startswith(("http://", "https://", "mailto:")):
         return url
     return f"https://{url}"
+
+
+def get_query_param(name):
+    value = st.query_params.get(name, "")
+    if isinstance(value, list):
+        return value[0] if value else ""
+    return value or ""
+
+
+def clean_report_notes(output):
+    lines = []
+    for line in (output or "").splitlines():
+        stripped = line.strip()
+        if not stripped:
+            lines.append("")
+            continue
+        lowered = stripped.lower()
+        if lowered.startswith("generating ai coach") or lowered.startswith("erstelle ai coach") or "正在生成 ai 教练" in lowered:
+            continue
+        if stripped.startswith("=====") and ("AI Coach" in stripped or "AI教练" in stripped):
+            continue
+        cleaned = (
+            line.replace("AI Coach-Feedback", "Berichtshinweise")
+            .replace("AI Coach Feedback", "Report notes")
+            .replace("AI coach feedback", "report notes")
+            .replace("AI Coach", "Report")
+            .replace("AI教练点评", "报告解读")
+            .replace("AI 教练点评", "报告解读")
+            .replace("AI教练", "报告")
+        )
+        lines.append(cleaned)
+    return "\n".join(lines).strip()
+
+
+def build_report_markdown(metrics, score, stability, feedback, fallback_analysis):
+    lines = [f"# {t['title']}", ""]
+    if fallback_analysis:
+        lines.extend([f"## {t['limited_title']}", t["limited_guidance"], ""])
+    else:
+        lines.extend(
+            [
+                f"## {t['score_title']}",
+                f"{t['score_label']}: {score}/100",
+                t["score_caption"],
+                "",
+                f"## {t['metrics_title']}",
+                f"- {t['metric_elbow']}: {metrics['elbow_angle']:.1f} deg",
+                f"- {t['metric_height']}: {metrics['release_height']:.1f} px",
+                f"- {t['metric_lean']}: {metrics['body_lean']:.1f} px",
+                f"- {t['metric_dip_knee']}: {metrics['dip_knee_angle']:.1f} deg",
+                f"- {t['metric_release_knee']}: {metrics['release_knee_angle']:.1f} deg",
+                f"- {t['metric_extension']}: {metrics['knee_extension']:.1f} deg",
+                f"- {t['metric_flow']}: {metrics['flow_frames']:.0f}",
+                "",
+            ]
+        )
+
+    if stability:
+        confidence_labels = {
+            "low": t["stability_low"],
+            "medium": t["stability_medium"],
+            "high": t["stability_high"],
+        }
+        lines.extend(
+            [
+                f"## {t['stability_title']}",
+                f"- {t['stability_detected']}: {stability.get('detected_shots', 0)}/{stability.get('recommended_shots', 5)}+",
+                f"- {t['stability_score']}: {stability.get('stability_score', 'N/A')}/100",
+                f"- {t['stability_confidence']}: {confidence_labels.get(stability.get('confidence', 'low'), stability.get('confidence', 'low'))}",
+                "",
+            ]
+        )
+
+    if feedback:
+        lines.extend([f"## {t['coach_title']}", feedback, ""])
+    return "\n".join(lines).strip()
+
+
+def make_pdf_report(report_text):
+    from reportlab.lib.pagesizes import A4
+    from reportlab.pdfbase import pdfmetrics
+    from reportlab.pdfbase.ttfonts import TTFont
+    from reportlab.pdfgen import canvas
+
+    font_name = "Helvetica"
+    for font_path in [
+        "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
+        "/System/Library/Fonts/Supplemental/Arial Unicode.ttf",
+        "/System/Library/Fonts/Supplemental/Arial.ttf",
+    ]:
+        if Path(font_path).exists():
+            font_name = "ReportFont"
+            pdfmetrics.registerFont(TTFont(font_name, font_path))
+            break
+
+    buffer = BytesIO()
+    pdf = canvas.Canvas(buffer, pagesize=A4)
+    width, height = A4
+    margin = 42
+    y = height - margin
+    line_height = 14
+
+    def new_page():
+        nonlocal y
+        pdf.showPage()
+        pdf.setFont(font_name, 10)
+        y = height - margin
+
+    pdf.setTitle(t["title"])
+    pdf.setFont(font_name, 10)
+    for raw_line in report_text.splitlines():
+        line = raw_line.strip()
+        if not line:
+            y -= line_height * 0.65
+            if y < margin:
+                new_page()
+            continue
+
+        is_heading = line.startswith("#")
+        line = line.lstrip("#").strip()
+        pdf.setFont(font_name, 15 if is_heading else 10)
+        max_chars = 62 if is_heading else 92
+        chunks = [line[index : index + max_chars] for index in range(0, len(line), max_chars)] or [""]
+        for chunk in chunks:
+            if y < margin:
+                new_page()
+                pdf.setFont(font_name, 15 if is_heading else 10)
+            pdf.drawString(margin, y, chunk)
+            y -= line_height * (1.25 if is_heading else 1)
+        pdf.setFont(font_name, 10)
+
+    pdf.save()
+    return buffer.getvalue()
 
 
 def is_supported_video(uploaded_file):
@@ -1107,8 +1247,11 @@ max_upload_mb = get_int_secret("MAX_UPLOAD_MB", 180, 1, 500)
 analysis_cooldown_seconds = get_int_secret("ANALYSIS_COOLDOWN_SECONDS", 20, 0, 300)
 ai_max_output_tokens = get_int_secret("AI_COACH_MAX_OUTPUT_TOKENS", 650, 128, 1000)
 payment_link_url = clean_external_url(get_secret("STRIPE_PAYMENT_LINK_URL", ""))
+payment_access_token = get_secret("PAYMENT_ACCESS_TOKEN", "").strip()
 feedback_form_url = clean_external_url(get_secret("FEEDBACK_FORM_URL", DEFAULT_FEEDBACK_URL))
 support_email = get_secret("SUPPORT_EMAIL", "").strip()
+payment_access = get_query_param("access").strip()
+payment_unlocked = not payment_link_url or bool(payment_access_token and payment_access == payment_access_token)
 
 render_landing(lang_code, payment_link_url)
 
@@ -1183,26 +1326,23 @@ with settings_col:
             next_signature = [(item["name"], len(item["bytes"])) for item in uploaded_videos]
             if previous_signature != next_signature:
                 clear_previous_analysis()
-                st.session_state["payment_confirmed"] = False
             st.session_state["uploaded_videos"] = uploaded_videos
             current_videos = uploaded_videos
             st.caption(t["upload_summary"].format(count=len(uploaded_videos)))
     elif "uploaded_videos" in st.session_state:
         clear_previous_analysis()
         st.session_state.pop("uploaded_videos", None)
-        st.session_state["payment_confirmed"] = False
         current_videos = []
 
     if current_videos and payment_link_url:
         st.markdown(f"#### {t['payment_required_title']}")
-        st.caption(t["payment_required_body"])
-        st.link_button(t["payment_button_label"], payment_link_url, type="primary", use_container_width=True)
-        st.caption(payment_link_url)
-        payment_confirmed = st.checkbox(
-            t["payment_confirm_label"],
-            key="payment_confirmed",
-        )
-        if not payment_confirmed:
+        if payment_unlocked:
+            st.success(t["payment_unlocked"])
+        elif not payment_access_token:
+            st.error(t["payment_config_missing"])
+        else:
+            st.caption(t["payment_required_body"])
+            st.link_button(t["payment_button_label"], payment_link_url, type="primary", use_container_width=True)
             st.info(t["payment_pending"])
     elif current_videos and not payment_link_url:
         st.info(t["payment_link_missing"])
@@ -1249,8 +1389,7 @@ with media_col:
         else:
             st.info(t["empty_pose"])
 
-payment_confirmed = bool(st.session_state.get("payment_confirmed"))
-can_analyze = bool(current_videos) and (not payment_link_url or payment_confirmed)
+can_analyze = bool(current_videos) and payment_unlocked
 
 if st.button(t["start_label"], type="primary", disabled=not can_analyze, use_container_width=True):
     now = time.monotonic()
@@ -1452,8 +1591,26 @@ if st.button(t["start_label"], type="primary", disabled=not can_analyze, use_con
             )
 
             if result.stdout:
-                st.session_state["coach_feedback"] = result.stdout
-                st.markdown(result.stdout)
+                report_notes = clean_report_notes(result.stdout)
+                st.session_state["coach_feedback"] = report_notes
+                st.markdown(report_notes)
+                report_markdown = build_report_markdown(metrics, score, stability, report_notes, fallback_analysis)
+                st.session_state["report_markdown"] = report_markdown
+                try:
+                    st.session_state["report_pdf_bytes"] = make_pdf_report(report_markdown)
+                    st.download_button(
+                        t["download_report"],
+                        data=st.session_state["report_pdf_bytes"],
+                        file_name="basketball-wurf-check-report.pdf",
+                        mime="application/pdf",
+                    )
+                except Exception:
+                    st.download_button(
+                        t["download_report"],
+                        data=report_markdown.encode("utf-8"),
+                        file_name="basketball-wurf-check-report.md",
+                        mime="text/markdown",
+                    )
             else:
                 st.info(t["no_feedback"])
 
