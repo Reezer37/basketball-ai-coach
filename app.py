@@ -77,6 +77,24 @@ TEXT = {
         "payment_config_missing": "Payment is enabled, but PAYMENT_ACCESS_TOKEN is missing. Add it to Streamlit Secrets and set the Stripe success URL to return with that token.",
         "payment_link_missing": "Payment link is not configured yet, so analysis is open for testing.",
         "download_report": "Download report PDF",
+        "pdf_subtitle": "Paid beta technique report",
+        "pdf_generated": "Generated",
+        "pdf_report_id": "Report ID",
+        "pdf_summary": "Executive summary",
+        "pdf_result": "Result",
+        "pdf_primary_focus": "Primary focus",
+        "pdf_primary_focus_body": "Use the notes below as the next training priority. The best reports focus on one change you can repeat, not ten problems at once.",
+        "pdf_pose_caption": "Annotated release pose",
+        "pdf_metrics_note": "Numbers describe visible mechanics in the uploaded video. They are not a make-percentage prediction.",
+        "pdf_training_plan": "Next practice plan",
+        "pdf_training_steps": [
+            "Start with 15-25 close-range form shots and repeat the same release feel.",
+            "Film 5 or more shots from the same angle to check whether the motion repeats.",
+            "Change only one cue in the next session, then compare the new report with this one.",
+        ],
+        "pdf_support": "Support and refunds",
+        "pdf_support_body": "If the report looks wrong, upload a short note through the feedback form and include the payment email.",
+        "pdf_footer": "This report evaluates visible shooting mechanics only. It is not medical advice and does not replace an in-person coach.",
         "support_title": "Feedback, problems, or refund request",
         "support_body": "If the report fails, feels wrong, or you want a refund, contact us with the payment email and a short note.",
         "support_button": "Send feedback",
@@ -199,6 +217,24 @@ Please upload a short, clear shooting clip:
         "payment_config_missing": "Zahlung ist aktiviert, aber PAYMENT_ACCESS_TOKEN fehlt. Bitte in Streamlit Secrets ergänzen und in Stripe als Erfolgslink hinterlegen.",
         "payment_link_missing": "Der Zahlungslink ist noch nicht konfiguriert. Die Analyse bleibt deshalb zum Testen offen.",
         "download_report": "Bericht als PDF herunterladen",
+        "pdf_subtitle": "Bezahlter Beta-Technikbericht",
+        "pdf_generated": "Erstellt",
+        "pdf_report_id": "Berichts-ID",
+        "pdf_summary": "Kurzfazit",
+        "pdf_result": "Ergebnis",
+        "pdf_primary_focus": "Wichtigster Fokus",
+        "pdf_primary_focus_body": "Nutze die Hinweise unten als nächsten Trainingsschwerpunkt. Gute Berichte öffnen nicht zehn Baustellen, sondern priorisieren eine Änderung, die du wiederholen kannst.",
+        "pdf_pose_caption": "Markierte Release-Pose",
+        "pdf_metrics_note": "Die Werte beschreiben sichtbare Mechanik im hochgeladenen Video. Sie sind keine Trefferwahrscheinlichkeit.",
+        "pdf_training_plan": "Nächster Trainingsplan",
+        "pdf_training_steps": [
+            "Beginne mit 15-25 nahen Formwürfen und wiederhole dasselbe Release-Gefühl.",
+            "Filme 5 oder mehr Würfe aus derselben Perspektive, um die Wiederholbarkeit zu prüfen.",
+            "Ändere in der nächsten Einheit nur einen Cue und vergleiche den neuen Bericht mit diesem.",
+        ],
+        "pdf_support": "Support und Rückerstattung",
+        "pdf_support_body": "Wenn der Bericht falsch wirkt, sende eine kurze Beschreibung über das Feedback-Formular und nenne die Zahlungs-E-Mail.",
+        "pdf_footer": "Dieser Bericht bewertet nur sichtbare Wurfmechanik. Er ist keine medizinische Beratung und ersetzt keinen Coach vor Ort.",
         "support_title": "Feedback, Problem oder Rückerstattung",
         "support_body": "Wenn der Bericht fehlschlägt, unpassend wirkt oder du eine Rückerstattung möchtest, kontaktiere uns mit Zahlungs-E-Mail und kurzer Beschreibung.",
         "support_button": "Feedback senden",
@@ -321,6 +357,24 @@ Bitte lade einen kurzen, klaren Wurfclip hoch:
         "payment_config_missing": "已启用付款，但缺少 PAYMENT_ACCESS_TOKEN。请在 Streamlit Secrets 中添加，并在 Stripe 成功返回链接中使用。",
         "payment_link_missing": "付款链接尚未配置，所以当前仍开放测试分析。",
         "download_report": "下载 PDF 报告",
+        "pdf_subtitle": "付费 Beta 技术报告",
+        "pdf_generated": "生成时间",
+        "pdf_report_id": "报告编号",
+        "pdf_summary": "核心摘要",
+        "pdf_result": "结果",
+        "pdf_primary_focus": "优先训练重点",
+        "pdf_primary_focus_body": "把下面的报告解读当作下一次训练的首要重点。好的报告不是一次指出十个问题，而是帮你先稳定改一个最关键动作。",
+        "pdf_pose_caption": "出手姿态标注图",
+        "pdf_metrics_note": "这些数值描述上传视频中的可见动作，不代表投篮命中率。",
+        "pdf_training_plan": "下一次训练安排",
+        "pdf_training_steps": [
+            "先做 15-25 次近筐定型投，重复同一种出手感觉。",
+            "从同一角度拍 5 次或更多投篮，用来检查动作是否可重复。",
+            "下一次训练只改一个提示词或动作重点，再和这份报告对比。",
+        ],
+        "pdf_support": "反馈与退款",
+        "pdf_support_body": "如果报告明显不准确，请通过反馈表单提交简短说明，并附上付款邮箱。",
+        "pdf_footer": "本报告只评估视频中可见的投篮动作，不属于医疗建议，也不能替代线下真人教练。",
         "support_title": "反馈、问题或退款申请",
         "support_body": "如果报告失败、结果明显不满意，或你想申请退款，请附上付款邮箱和简短说明联系我们。",
         "support_button": "提交反馈",
@@ -680,7 +734,16 @@ def build_report_markdown(metrics, score, stability, feedback, fallback_analysis
     return "\n".join(lines).strip()
 
 
-def make_pdf_report(report_text, analyzed_image_bytes=None):
+def make_pdf_report(
+    report_text,
+    metrics=None,
+    score=None,
+    stability=None,
+    fallback_analysis=False,
+    analyzed_image_bytes=None,
+    support_email="",
+    feedback_url="",
+):
     from reportlab.lib import colors
     from reportlab.lib.pagesizes import A4
     from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
@@ -689,6 +752,14 @@ def make_pdf_report(report_text, analyzed_image_bytes=None):
     from reportlab.pdfbase.ttfonts import TTFont
     from reportlab.platypus import Image as PdfImage
     from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
+
+    accent = colors.HexColor("#ef4444")
+    dark = colors.HexColor("#111827")
+    muted = colors.HexColor("#6b7280")
+    blue = colors.HexColor("#2563eb")
+    green = colors.HexColor("#16a34a")
+    panel = colors.HexColor("#f8fafc")
+    border = colors.HexColor("#e5e7eb")
 
     font_name = "Helvetica"
     for font_path in [
@@ -716,10 +787,10 @@ def make_pdf_report(report_text, analyzed_image_bytes=None):
         "ReportTitle",
         parent=base_styles["Title"],
         fontName=font_name,
-        fontSize=22,
-        leading=27,
-        textColor=colors.HexColor("#111827"),
-        spaceAfter=10,
+        fontSize=24,
+        leading=29,
+        textColor=dark,
+        spaceAfter=6,
         wordWrap="CJK",
     )
     subtitle_style = ParagraphStyle(
@@ -728,20 +799,29 @@ def make_pdf_report(report_text, analyzed_image_bytes=None):
         fontName=font_name,
         fontSize=10,
         leading=14,
-        textColor=colors.HexColor("#4b5563"),
-        spaceAfter=14,
+        textColor=muted,
+        spaceAfter=12,
         wordWrap="CJK",
     )
     heading_style = ParagraphStyle(
         "ReportHeading",
         parent=base_styles["Heading2"],
         fontName=font_name,
-        fontSize=14,
-        leading=18,
-        textColor=colors.HexColor("#ef4444"),
-        spaceBefore=10,
+        fontSize=13,
+        leading=17,
+        textColor=dark,
+        spaceBefore=11,
         spaceAfter=6,
         wordWrap="CJK",
+    )
+    small_heading_style = ParagraphStyle(
+        "ReportSmallHeading",
+        parent=heading_style,
+        fontSize=10,
+        leading=13,
+        textColor=accent,
+        spaceBefore=0,
+        spaceAfter=3,
     )
     body_style = ParagraphStyle(
         "ReportBody",
@@ -753,6 +833,14 @@ def make_pdf_report(report_text, analyzed_image_bytes=None):
         spaceAfter=5,
         wordWrap="CJK",
     )
+    small_style = ParagraphStyle(
+        "ReportSmall",
+        parent=body_style,
+        fontSize=8,
+        leading=11,
+        textColor=muted,
+        wordWrap="CJK",
+    )
     bullet_style = ParagraphStyle(
         "ReportBullet",
         parent=body_style,
@@ -761,17 +849,91 @@ def make_pdf_report(report_text, analyzed_image_bytes=None):
         bulletIndent=0,
     )
 
+    def paragraph(text, style=body_style):
+        return Paragraph(escape(str(text or "")), style)
+
+    def card(title, value, caption="", color=dark):
+        return [
+            paragraph(title, small_style),
+            Paragraph(f'<font color="{color.hexval()}" size="18">{escape(str(value))}</font>', body_style),
+            paragraph(caption, small_style),
+        ]
+
+    def label_value(label, value):
+        return [paragraph(label, small_style), paragraph(value, body_style)]
+
+    def format_metric(value, suffix="", digits=1):
+        if value is None:
+            return "N/A"
+        if isinstance(value, (int, float)):
+            return f"{value:.{digits}f}{suffix}"
+        return f"{value}{suffix}"
+
+    confidence_labels = {
+        "low": t["stability_low"],
+        "medium": t["stability_medium"],
+        "high": t["stability_high"],
+    }
+    detected_shots = stability.get("detected_shots", 0) if stability else 0
+    recommended_shots = stability.get("recommended_shots", 5) if stability else 5
+    stability_score = stability.get("stability_score") if stability else None
+    stability_confidence = confidence_labels.get(stability.get("confidence", "low"), t["stability_low"]) if stability else t["stability_low"]
+    report_id = f"WCK-{time.strftime('%Y%m%d')}-{str(int(time.time()))[-5:]}"
+
     story = [
         Paragraph(escape(t["title"]), title_style),
-        Paragraph(escape(t["score_caption"]), subtitle_style),
+        Paragraph(escape(t["pdf_subtitle"]), subtitle_style),
         Table(
-            [[Paragraph(escape(t["score_title"]), body_style), Paragraph(escape(t["metrics_title"]), body_style), Paragraph(escape(t["stability_title"]), body_style)]],
+            [
+                [
+                    paragraph(f"{t['pdf_generated']}: {time.strftime('%Y-%m-%d')}", small_style),
+                    paragraph(f"{t['pdf_report_id']}: {report_id}", small_style),
+                ]
+            ],
+            colWidths=[78 * mm, 78 * mm],
+            style=TableStyle(
+                [
+                    ("BACKGROUND", (0, 0), (-1, -1), panel),
+                    ("BOX", (0, 0), (-1, -1), 0.5, border),
+                    ("LEFTPADDING", (0, 0), (-1, -1), 8),
+                    ("RIGHTPADDING", (0, 0), (-1, -1), 8),
+                    ("TOPPADDING", (0, 0), (-1, -1), 6),
+                    ("BOTTOMPADDING", (0, 0), (-1, -1), 6),
+                ]
+            ),
+        ),
+        Spacer(1, 10),
+        Paragraph(escape(t["pdf_summary"]), heading_style),
+        Table(
+            [
+                [
+                    card(
+                        t["score_title"],
+                        f"{score}/100" if score is not None and not fallback_analysis else t["limited_title"],
+                        t["score_caption"] if score is not None else t["limited_guidance"],
+                        accent if score is not None else blue,
+                    ),
+                    card(
+                        t["stability_detected"],
+                        f"{detected_shots}/{recommended_shots}+",
+                        t["stability_help"],
+                        blue,
+                    ),
+                    card(
+                        t["stability_score"],
+                        f"{stability_score}/100" if stability_score is not None else stability_confidence,
+                        t["stability_limited"] if detected_shots < recommended_shots else t["stability_confidence"],
+                        green if stability_score is not None else muted,
+                    ),
+                ]
+            ],
             colWidths=[52 * mm, 52 * mm, 52 * mm],
             style=TableStyle(
                 [
-                    ("BACKGROUND", (0, 0), (-1, -1), colors.HexColor("#f3f4f6")),
-                    ("BOX", (0, 0), (-1, -1), 0.75, colors.HexColor("#d1d5db")),
-                    ("INNERGRID", (0, 0), (-1, -1), 0.5, colors.HexColor("#e5e7eb")),
+                    ("BACKGROUND", (0, 0), (-1, -1), colors.white),
+                    ("BOX", (0, 0), (-1, -1), 0.75, border),
+                    ("INNERGRID", (0, 0), (-1, -1), 0.5, border),
+                    ("VALIGN", (0, 0), (-1, -1), "TOP"),
                     ("LEFTPADDING", (0, 0), (-1, -1), 9),
                     ("RIGHTPADDING", (0, 0), (-1, -1), 9),
                     ("TOPPADDING", (0, 0), (-1, -1), 9),
@@ -782,6 +944,33 @@ def make_pdf_report(report_text, analyzed_image_bytes=None):
         Spacer(1, 10),
     ]
 
+    story.extend(
+        [
+            Table(
+                [
+                    [
+                        [
+                            paragraph(t["pdf_primary_focus"], small_heading_style),
+                            paragraph(t["pdf_primary_focus_body"], body_style),
+                        ]
+                    ]
+                ],
+                colWidths=[156 * mm],
+                style=TableStyle(
+                    [
+                        ("BACKGROUND", (0, 0), (-1, -1), colors.HexColor("#fff7ed")),
+                        ("BOX", (0, 0), (-1, -1), 0.75, colors.HexColor("#fed7aa")),
+                        ("LEFTPADDING", (0, 0), (-1, -1), 10),
+                        ("RIGHTPADDING", (0, 0), (-1, -1), 10),
+                        ("TOPPADDING", (0, 0), (-1, -1), 8),
+                        ("BOTTOMPADDING", (0, 0), (-1, -1), 8),
+                    ]
+                ),
+            ),
+            Spacer(1, 8),
+        ]
+    )
+
     if analyzed_image_bytes:
         try:
             image = Image.open(BytesIO(analyzed_image_bytes))
@@ -791,12 +980,48 @@ def make_pdf_report(report_text, analyzed_image_bytes=None):
             scale = min(max_width / image_width, max_height / image_height)
             story.extend(
                 [
+                    Paragraph(escape(t["pdf_pose_caption"]), heading_style),
                     PdfImage(BytesIO(analyzed_image_bytes), width=image_width * scale, height=image_height * scale),
+                    Paragraph(escape(t["pdf_metrics_note"]), small_style),
                     Spacer(1, 8),
                 ]
             )
         except Exception:
             pass
+
+    if metrics and not fallback_analysis:
+        metric_rows = [
+            [paragraph(t["metric_elbow"], body_style), paragraph(format_metric(metrics.get("elbow_angle"), "°"), body_style), paragraph(t["metric_elbow_help"], small_style)],
+            [paragraph(t["metric_height"], body_style), paragraph(format_metric(metrics.get("release_height"), " px"), body_style), paragraph(t["metric_height_help"], small_style)],
+            [paragraph(t["metric_lean"], body_style), paragraph(format_metric(metrics.get("body_lean"), " px"), body_style), paragraph(t["metric_lean_help"], small_style)],
+            [paragraph(t["metric_dip_knee"], body_style), paragraph(format_metric(metrics.get("dip_knee_angle"), "°"), body_style), paragraph(t["metric_dip_knee_help"], small_style)],
+            [paragraph(t["metric_release_knee"], body_style), paragraph(format_metric(metrics.get("release_knee_angle"), "°"), body_style), paragraph(t["metric_release_knee_help"], small_style)],
+            [paragraph(t["metric_extension"], body_style), paragraph(format_metric(metrics.get("knee_extension"), "°"), body_style), paragraph(t["metric_extension_help"], small_style)],
+            [paragraph(t["metric_flow"], body_style), paragraph(format_metric(metrics.get("flow_frames"), "", 0), body_style), paragraph(t["metric_flow_help"], small_style)],
+        ]
+        story.extend(
+            [
+                Paragraph(escape(t["metrics_title"]), heading_style),
+                Table(
+                    metric_rows,
+                    colWidths=[42 * mm, 28 * mm, 86 * mm],
+                    style=TableStyle(
+                        [
+                            ("BACKGROUND", (0, 0), (-1, 0), panel),
+                            ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.white, colors.HexColor("#f9fafb")]),
+                            ("BOX", (0, 0), (-1, -1), 0.5, border),
+                            ("INNERGRID", (0, 0), (-1, -1), 0.35, border),
+                            ("VALIGN", (0, 0), (-1, -1), "TOP"),
+                            ("LEFTPADDING", (0, 0), (-1, -1), 7),
+                            ("RIGHTPADDING", (0, 0), (-1, -1), 7),
+                            ("TOPPADDING", (0, 0), (-1, -1), 6),
+                            ("BOTTOMPADDING", (0, 0), (-1, -1), 6),
+                        ]
+                    ),
+                ),
+                Spacer(1, 8),
+            ]
+        )
 
     for raw_line in report_text.splitlines():
         line = raw_line.strip()
@@ -808,6 +1033,48 @@ def make_pdf_report(report_text, analyzed_image_bytes=None):
             story.append(Paragraph(escape(line[2:]), bullet_style, bulletText="•"))
         else:
             story.append(Paragraph(escape(line), body_style))
+
+    story.extend(
+        [
+            Paragraph(escape(t["pdf_training_plan"]), heading_style),
+            *[Paragraph(escape(step), bullet_style, bulletText="•") for step in t["pdf_training_steps"]],
+            Spacer(1, 8),
+            Table(
+                [
+                    [
+                        [
+                            paragraph(t["pdf_support"], small_heading_style),
+                            paragraph(t["pdf_support_body"], body_style),
+                            paragraph(
+                                " · ".join(
+                                    item
+                                    for item in [
+                                        f"{t['support_email_label']}: {support_email}" if support_email else "",
+                                        feedback_url if feedback_url else "",
+                                    ]
+                                    if item
+                                ),
+                                small_style,
+                            ),
+                        ]
+                    ]
+                ],
+                colWidths=[156 * mm],
+                style=TableStyle(
+                    [
+                        ("BACKGROUND", (0, 0), (-1, -1), colors.HexColor("#eff6ff")),
+                        ("BOX", (0, 0), (-1, -1), 0.75, colors.HexColor("#bfdbfe")),
+                        ("LEFTPADDING", (0, 0), (-1, -1), 10),
+                        ("RIGHTPADDING", (0, 0), (-1, -1), 10),
+                        ("TOPPADDING", (0, 0), (-1, -1), 8),
+                        ("BOTTOMPADDING", (0, 0), (-1, -1), 8),
+                    ]
+                ),
+            ),
+            Spacer(1, 8),
+            Paragraph(escape(t["pdf_footer"]), small_style),
+        ]
+    )
 
     document.build(story)
     return buffer.getvalue()
@@ -1680,7 +1947,16 @@ if st.button(t["start_label"], type="primary", disabled=not can_analyze, use_con
                 report_markdown = build_report_markdown(metrics, score, stability, report_notes, fallback_analysis)
                 st.session_state["report_markdown"] = report_markdown
                 try:
-                    st.session_state["report_pdf_bytes"] = make_pdf_report(report_markdown, analyzed_image_bytes)
+                    st.session_state["report_pdf_bytes"] = make_pdf_report(
+                        report_markdown,
+                        metrics=metrics,
+                        score=score,
+                        stability=stability,
+                        fallback_analysis=fallback_analysis,
+                        analyzed_image_bytes=analyzed_image_bytes,
+                        support_email=support_email,
+                        feedback_url=feedback_form_url,
+                    )
                     st.download_button(
                         t["download_report"],
                         data=st.session_state["report_pdf_bytes"],
