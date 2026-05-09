@@ -5,6 +5,7 @@ import subprocess
 import sys
 import tempfile
 import time
+from html import escape
 from io import BytesIO
 from pathlib import Path
 
@@ -68,11 +69,11 @@ TEXT = {
         "upload_summary": "{count} video(s) selected.",
         "cooldown": "Please wait {seconds} more seconds before starting another analysis.",
         "start_label": "Start analysis",
-        "payment_required_title": "Step 2: buy the beta report",
-        "payment_required_body": "Your video is ready. Pay securely first, then return here and start the analysis.",
+        "payment_required_title": "Step 1: buy the beta report",
+        "payment_required_body": "Pay securely first. After checkout, Stripe returns you here to upload your video and generate the report.",
         "payment_button_label": "Pay 1.99 Euro with Stripe",
-        "payment_pending": "Payment is required before report generation. After checkout, return through the payment success link to unlock analysis.",
-        "payment_unlocked": "Payment return detected. You can now generate the report.",
+        "payment_pending": "Payment is required before upload and report generation. After checkout, return through the payment success link to unlock the upload area.",
+        "payment_unlocked": "Payment return detected. You can now upload your video and generate the report.",
         "payment_config_missing": "Payment is enabled, but PAYMENT_ACCESS_TOKEN is missing. Add it to Streamlit Secrets and set the Stripe success URL to return with that token.",
         "payment_link_missing": "Payment link is not configured yet, so analysis is open for testing.",
         "download_report": "Download report PDF",
@@ -190,11 +191,11 @@ Please upload a short, clear shooting clip:
         "upload_summary": "{count} Video(s) ausgewählt.",
         "cooldown": "Bitte warte noch {seconds} Sekunden, bevor du die nächste Analyse startest.",
         "start_label": "Analyse starten",
-        "payment_required_title": "Schritt 2: Beta-Bericht kaufen",
-        "payment_required_body": "Dein Video ist bereit. Bezahle zuerst sicher über Stripe, komm dann hierher zurück und starte die Analyse.",
+        "payment_required_title": "Schritt 1: Beta-Bericht kaufen",
+        "payment_required_body": "Bezahle zuerst sicher über Stripe. Nach dem Checkout kommst du hierher zurück, lädst dein Video hoch und erstellst den Bericht.",
         "payment_button_label": "1,99 Euro mit Stripe bezahlen",
-        "payment_pending": "Vor der Berichtserstellung ist die Zahlung erforderlich. Kehre nach dem Checkout über den Erfolgslink zurück, um die Analyse freizuschalten.",
-        "payment_unlocked": "Zahlungsrückkehr erkannt. Du kannst den Bericht jetzt erstellen.",
+        "payment_pending": "Vor Upload und Berichtserstellung ist die Zahlung erforderlich. Kehre nach dem Checkout über den Erfolgslink zurück, um den Upload-Bereich freizuschalten.",
+        "payment_unlocked": "Zahlungsrückkehr erkannt. Du kannst dein Video jetzt hochladen und den Bericht erstellen.",
         "payment_config_missing": "Zahlung ist aktiviert, aber PAYMENT_ACCESS_TOKEN fehlt. Bitte in Streamlit Secrets ergänzen und in Stripe als Erfolgslink hinterlegen.",
         "payment_link_missing": "Der Zahlungslink ist noch nicht konfiguriert. Die Analyse bleibt deshalb zum Testen offen.",
         "download_report": "Bericht als PDF herunterladen",
@@ -312,11 +313,11 @@ Bitte lade einen kurzen, klaren Wurfclip hoch:
         "upload_summary": "已选择 {count} 个视频。",
         "cooldown": "请再等待 {seconds} 秒后开始下一次分析。",
         "start_label": "开始分析",
-        "payment_required_title": "第二步：购买 Beta 报告",
-        "payment_required_body": "视频已准备好。请先通过 Stripe 安全付款，然后回到这里开始生成报告。",
+        "payment_required_title": "第一步：购买 Beta 报告",
+        "payment_required_body": "请先通过 Stripe 安全付款。付款后会回到这里，再上传视频并生成报告。",
         "payment_button_label": "通过 Stripe 支付 1.99 欧元",
-        "payment_pending": "生成报告前需要先完成付款。付款后请通过支付成功页面返回，系统会解锁分析。",
-        "payment_unlocked": "已检测到付款返回链接，现在可以生成报告。",
+        "payment_pending": "上传和生成报告前需要先完成付款。付款后请通过支付成功页面返回，系统会解锁上传区。",
+        "payment_unlocked": "已检测到付款返回链接，现在可以上传视频并生成报告。",
         "payment_config_missing": "已启用付款，但缺少 PAYMENT_ACCESS_TOKEN。请在 Streamlit Secrets 中添加，并在 Stripe 成功返回链接中使用。",
         "payment_link_missing": "付款链接尚未配置，所以当前仍开放测试分析。",
         "download_report": "下载 PDF 报告",
@@ -679,11 +680,15 @@ def build_report_markdown(metrics, score, stability, feedback, fallback_analysis
     return "\n".join(lines).strip()
 
 
-def make_pdf_report(report_text):
+def make_pdf_report(report_text, analyzed_image_bytes=None):
+    from reportlab.lib import colors
     from reportlab.lib.pagesizes import A4
+    from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
+    from reportlab.lib.units import mm
     from reportlab.pdfbase import pdfmetrics
     from reportlab.pdfbase.ttfonts import TTFont
-    from reportlab.pdfgen import canvas
+    from reportlab.platypus import Image as PdfImage
+    from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
 
     font_name = "Helvetica"
     for font_path in [
@@ -697,42 +702,114 @@ def make_pdf_report(report_text):
             break
 
     buffer = BytesIO()
-    pdf = canvas.Canvas(buffer, pagesize=A4)
-    width, height = A4
-    margin = 42
-    y = height - margin
-    line_height = 14
+    document = SimpleDocTemplate(
+        buffer,
+        pagesize=A4,
+        rightMargin=16 * mm,
+        leftMargin=16 * mm,
+        topMargin=16 * mm,
+        bottomMargin=16 * mm,
+        title=t["title"],
+    )
+    base_styles = getSampleStyleSheet()
+    title_style = ParagraphStyle(
+        "ReportTitle",
+        parent=base_styles["Title"],
+        fontName=font_name,
+        fontSize=22,
+        leading=27,
+        textColor=colors.HexColor("#111827"),
+        spaceAfter=10,
+        wordWrap="CJK",
+    )
+    subtitle_style = ParagraphStyle(
+        "ReportSubtitle",
+        parent=base_styles["BodyText"],
+        fontName=font_name,
+        fontSize=10,
+        leading=14,
+        textColor=colors.HexColor("#4b5563"),
+        spaceAfter=14,
+        wordWrap="CJK",
+    )
+    heading_style = ParagraphStyle(
+        "ReportHeading",
+        parent=base_styles["Heading2"],
+        fontName=font_name,
+        fontSize=14,
+        leading=18,
+        textColor=colors.HexColor("#ef4444"),
+        spaceBefore=10,
+        spaceAfter=6,
+        wordWrap="CJK",
+    )
+    body_style = ParagraphStyle(
+        "ReportBody",
+        parent=base_styles["BodyText"],
+        fontName=font_name,
+        fontSize=10,
+        leading=14,
+        textColor=colors.HexColor("#1f2937"),
+        spaceAfter=5,
+        wordWrap="CJK",
+    )
+    bullet_style = ParagraphStyle(
+        "ReportBullet",
+        parent=body_style,
+        leftIndent=12,
+        firstLineIndent=-8,
+        bulletIndent=0,
+    )
 
-    def new_page():
-        nonlocal y
-        pdf.showPage()
-        pdf.setFont(font_name, 10)
-        y = height - margin
+    story = [
+        Paragraph(escape(t["title"]), title_style),
+        Paragraph(escape(t["score_caption"]), subtitle_style),
+        Table(
+            [[Paragraph(escape(t["score_title"]), body_style), Paragraph(escape(t["metrics_title"]), body_style), Paragraph(escape(t["stability_title"]), body_style)]],
+            colWidths=[52 * mm, 52 * mm, 52 * mm],
+            style=TableStyle(
+                [
+                    ("BACKGROUND", (0, 0), (-1, -1), colors.HexColor("#f3f4f6")),
+                    ("BOX", (0, 0), (-1, -1), 0.75, colors.HexColor("#d1d5db")),
+                    ("INNERGRID", (0, 0), (-1, -1), 0.5, colors.HexColor("#e5e7eb")),
+                    ("LEFTPADDING", (0, 0), (-1, -1), 9),
+                    ("RIGHTPADDING", (0, 0), (-1, -1), 9),
+                    ("TOPPADDING", (0, 0), (-1, -1), 9),
+                    ("BOTTOMPADDING", (0, 0), (-1, -1), 9),
+                ]
+            ),
+        ),
+        Spacer(1, 10),
+    ]
 
-    pdf.setTitle(t["title"])
-    pdf.setFont(font_name, 10)
+    if analyzed_image_bytes:
+        try:
+            image = Image.open(BytesIO(analyzed_image_bytes))
+            image_width, image_height = image.size
+            max_width = 160 * mm
+            max_height = 85 * mm
+            scale = min(max_width / image_width, max_height / image_height)
+            story.extend(
+                [
+                    PdfImage(BytesIO(analyzed_image_bytes), width=image_width * scale, height=image_height * scale),
+                    Spacer(1, 8),
+                ]
+            )
+        except Exception:
+            pass
+
     for raw_line in report_text.splitlines():
         line = raw_line.strip()
         if not line:
-            y -= line_height * 0.65
-            if y < margin:
-                new_page()
-            continue
+            story.append(Spacer(1, 4))
+        elif line.startswith("#"):
+            story.append(Paragraph(escape(line.lstrip("#").strip()), heading_style))
+        elif line.startswith("- "):
+            story.append(Paragraph(escape(line[2:]), bullet_style, bulletText="•"))
+        else:
+            story.append(Paragraph(escape(line), body_style))
 
-        is_heading = line.startswith("#")
-        line = line.lstrip("#").strip()
-        pdf.setFont(font_name, 15 if is_heading else 10)
-        max_chars = 62 if is_heading else 92
-        chunks = [line[index : index + max_chars] for index in range(0, len(line), max_chars)] or [""]
-        for chunk in chunks:
-            if y < margin:
-                new_page()
-                pdf.setFont(font_name, 15 if is_heading else 10)
-            pdf.drawString(margin, y, chunk)
-            y -= line_height * (1.25 if is_heading else 1)
-        pdf.setFont(font_name, 10)
-
-    pdf.save()
+    document.build(story)
     return buffer.getvalue()
 
 
@@ -1268,6 +1345,10 @@ st.markdown(
 
 settings_col, media_col = st.columns([0.92, 1.55], gap="large")
 current_videos = st.session_state.get("uploaded_videos", [])
+if payment_link_url and not payment_unlocked and current_videos:
+    clear_previous_analysis()
+    st.session_state.pop("uploaded_videos", None)
+    current_videos = []
 
 with settings_col:
     st.subheader(t["settings"])
@@ -1289,63 +1370,65 @@ with settings_col:
         format_func=lambda option: t["quick_label"] if option == "quick" else t["detailed_label"],
         horizontal=True,
     )
-    st.info(f"**{t['record_checklist_title']}**\n{t['record_checklist']}")
-    st.caption(t["record_hint"])
 
-    upload_label = t["record_upload_label"]
-    video = st.file_uploader(
-        upload_label,
-        type=["mp4", "mov", "m4v", "mpeg4", "webm", "3gp", "3gpp"],
-        help=t["upload_help"],
-        accept_multiple_files=True,
-    )
-    if video:
-        unsupported_files = [item.name for item in video if not is_supported_video(item)]
-        uploaded_videos = [
-            {"name": item.name, "bytes": item.getvalue()}
-            for item in video
-            if is_supported_video(item)
-        ]
-        total_upload_bytes = sum(len(item["bytes"]) for item in uploaded_videos)
-        max_upload_bytes = max_upload_mb * 1024 * 1024
-        if unsupported_files:
-            clear_previous_analysis()
-            st.session_state.pop("uploaded_videos", None)
-            current_videos = []
-            st.error(t["unsupported_file"])
-        elif total_upload_bytes > max_upload_bytes:
-            clear_previous_analysis()
-            st.session_state.pop("uploaded_videos", None)
-            current_videos = []
-            st.error(t["file_too_large"].format(max_mb=max_upload_mb))
-        else:
-            previous_signature = [
-                (item["name"], len(item["bytes"]))
-                for item in st.session_state.get("uploaded_videos", [])
-            ]
-            next_signature = [(item["name"], len(item["bytes"])) for item in uploaded_videos]
-            if previous_signature != next_signature:
-                clear_previous_analysis()
-            st.session_state["uploaded_videos"] = uploaded_videos
-            current_videos = uploaded_videos
-            st.caption(t["upload_summary"].format(count=len(uploaded_videos)))
-    elif "uploaded_videos" in st.session_state:
-        clear_previous_analysis()
-        st.session_state.pop("uploaded_videos", None)
-        current_videos = []
-
-    if current_videos and payment_link_url:
+    if payment_link_url and not payment_unlocked:
         st.markdown(f"#### {t['payment_required_title']}")
-        if payment_unlocked:
-            st.success(t["payment_unlocked"])
-        elif not payment_access_token:
+        if not payment_access_token:
             st.error(t["payment_config_missing"])
         else:
             st.caption(t["payment_required_body"])
             st.link_button(t["payment_button_label"], payment_link_url, type="primary", use_container_width=True)
             st.info(t["payment_pending"])
-    elif current_videos and not payment_link_url:
-        st.info(t["payment_link_missing"])
+    else:
+        if payment_link_url and payment_unlocked:
+            st.success(t["payment_unlocked"])
+        elif not payment_link_url:
+            st.info(t["payment_link_missing"])
+
+        st.info(f"**{t['record_checklist_title']}**\n{t['record_checklist']}")
+        st.caption(t["record_hint"])
+
+        upload_label = t["record_upload_label"]
+        video = st.file_uploader(
+            upload_label,
+            type=["mp4", "mov", "m4v", "mpeg4", "webm", "3gp", "3gpp"],
+            help=t["upload_help"],
+            accept_multiple_files=True,
+        )
+        if video:
+            unsupported_files = [item.name for item in video if not is_supported_video(item)]
+            uploaded_videos = [
+                {"name": item.name, "bytes": item.getvalue()}
+                for item in video
+                if is_supported_video(item)
+            ]
+            total_upload_bytes = sum(len(item["bytes"]) for item in uploaded_videos)
+            max_upload_bytes = max_upload_mb * 1024 * 1024
+            if unsupported_files:
+                clear_previous_analysis()
+                st.session_state.pop("uploaded_videos", None)
+                current_videos = []
+                st.error(t["unsupported_file"])
+            elif total_upload_bytes > max_upload_bytes:
+                clear_previous_analysis()
+                st.session_state.pop("uploaded_videos", None)
+                current_videos = []
+                st.error(t["file_too_large"].format(max_mb=max_upload_mb))
+            else:
+                previous_signature = [
+                    (item["name"], len(item["bytes"]))
+                    for item in st.session_state.get("uploaded_videos", [])
+                ]
+                next_signature = [(item["name"], len(item["bytes"])) for item in uploaded_videos]
+                if previous_signature != next_signature:
+                    clear_previous_analysis()
+                st.session_state["uploaded_videos"] = uploaded_videos
+                current_videos = uploaded_videos
+                st.caption(t["upload_summary"].format(count=len(uploaded_videos)))
+        elif "uploaded_videos" in st.session_state:
+            clear_previous_analysis()
+            st.session_state.pop("uploaded_videos", None)
+            current_videos = []
 
     render_support_box(feedback_form_url, support_email)
 
@@ -1597,7 +1680,7 @@ if st.button(t["start_label"], type="primary", disabled=not can_analyze, use_con
                 report_markdown = build_report_markdown(metrics, score, stability, report_notes, fallback_analysis)
                 st.session_state["report_markdown"] = report_markdown
                 try:
-                    st.session_state["report_pdf_bytes"] = make_pdf_report(report_markdown)
+                    st.session_state["report_pdf_bytes"] = make_pdf_report(report_markdown, analyzed_image_bytes)
                     st.download_button(
                         t["download_report"],
                         data=st.session_state["report_pdf_bytes"],
