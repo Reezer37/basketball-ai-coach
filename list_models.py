@@ -1,6 +1,11 @@
 from google import genai
+import os
 
-client = genai.Client(api_key="你的API_KEY")
+api_key = os.getenv("GEMINI_API_KEY")
+if not api_key:
+    raise RuntimeError("Set GEMINI_API_KEY in your environment before running this script.")
+
+client = genai.Client(api_key=api_key)
 
 models = client.models.list()
 
