@@ -1,0 +1,482 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Basketball Wurfanalyse online | Basketball Wurf Check</title>
+  <meta name="description" content="Basketball Wurf Check analysiert dein Wurfvideo online: Release-Pose, Wurftechnik, Stabilität und konkrete Trainingshinweise ab 1,99 Euro.">
+  <meta name="robots" content="index, follow">
+  <link rel="canonical" href="https://basketballwurfcheck.de/">
+  <meta property="og:title" content="Basketball Wurfanalyse online">
+  <meta property="og:description" content="Lade ein kurzes Wurfvideo hoch und erhalte einen verständlichen Technikbericht zu Release, Balance, Timing und Stabilität.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://basketballwurfcheck.de/">
+  <meta property="og:image" content="https://basketballwurfcheck.de/assets/release-analyzed.jpg">
+  <meta name="twitter:card" content="summary_large_image">
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #111827;
+      --muted: #526070;
+      --line: #d8dee7;
+      --soft: #f5f7fb;
+      --accent: #ef4444;
+      --accent-dark: #b91c1c;
+      --blue: #2563eb;
+      --green: #147a4b;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: var(--ink);
+      background: #ffffff;
+      line-height: 1.55;
+    }
+
+    a {
+      color: inherit;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      max-width: 1120px;
+      margin: 0 auto;
+      padding: 1rem 1.25rem;
+    }
+
+    .brand {
+      font-weight: 850;
+      letter-spacing: 0;
+      font-size: 1.05rem;
+    }
+
+    .nav {
+      display: flex;
+      gap: 1rem;
+      align-items: center;
+      font-size: 0.94rem;
+      color: var(--muted);
+    }
+
+    .nav a {
+      text-decoration: none;
+    }
+
+    .hero {
+      min-height: 620px;
+      display: flex;
+      align-items: end;
+      background:
+        linear-gradient(90deg, rgba(5, 9, 18, 0.86), rgba(5, 9, 18, 0.58) 42%, rgba(5, 9, 18, 0.20)),
+        url("./assets/release-analyzed.jpg") center right / cover no-repeat;
+      color: #ffffff;
+    }
+
+    .hero-inner {
+      width: 100%;
+      max-width: 1120px;
+      margin: 0 auto;
+      padding: 5.8rem 1.25rem 4.7rem;
+    }
+
+    .eyebrow {
+      font-weight: 800;
+      color: #fca5a5;
+      margin-bottom: 0.7rem;
+      font-size: 0.96rem;
+    }
+
+    h1 {
+      font-size: clamp(2.45rem, 5vw, 5.3rem);
+      line-height: 1.03;
+      margin: 0;
+      max-width: 920px;
+      letter-spacing: 0;
+    }
+
+    .hero p {
+      max-width: 710px;
+      margin: 1.1rem 0 0;
+      font-size: 1.2rem;
+      color: rgba(255, 255, 255, 0.86);
+    }
+
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.8rem;
+      margin-top: 1.45rem;
+    }
+
+    .button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 46px;
+      padding: 0.72rem 1rem;
+      border-radius: 7px;
+      text-decoration: none;
+      font-weight: 850;
+      border: 1px solid transparent;
+    }
+
+    .button.primary {
+      background: var(--accent);
+      color: #ffffff;
+    }
+
+    .button.primary:hover {
+      background: var(--accent-dark);
+    }
+
+    .button.secondary {
+      color: #ffffff;
+      border-color: rgba(255, 255, 255, 0.45);
+      background: rgba(255, 255, 255, 0.08);
+    }
+
+    .trust-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.65rem;
+      margin-top: 1.25rem;
+      color: rgba(255, 255, 255, 0.86);
+      font-size: 0.95rem;
+    }
+
+    .trust-row span {
+      border: 1px solid rgba(255, 255, 255, 0.28);
+      border-radius: 999px;
+      padding: 0.35rem 0.72rem;
+      background: rgba(255, 255, 255, 0.08);
+    }
+
+    main {
+      max-width: 1120px;
+      margin: 0 auto;
+      padding: 3.2rem 1.25rem 4rem;
+    }
+
+    section {
+      margin: 0 0 3.2rem;
+    }
+
+    h2 {
+      font-size: clamp(1.65rem, 3vw, 2.4rem);
+      line-height: 1.14;
+      margin: 0 0 0.8rem;
+      letter-spacing: 0;
+    }
+
+    .section-lead {
+      max-width: 780px;
+      color: var(--muted);
+      margin: 0 0 1.35rem;
+      font-size: 1.06rem;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 1rem;
+    }
+
+    .card {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 1.05rem;
+      background: #ffffff;
+      min-height: 142px;
+    }
+
+    .card strong {
+      display: block;
+      margin-bottom: 0.42rem;
+      font-size: 1.04rem;
+    }
+
+    .card p,
+    .report-line p,
+    .faq p {
+      margin: 0;
+      color: var(--muted);
+    }
+
+    .band {
+      border: 1px solid #c7d2fe;
+      border-radius: 8px;
+      background: #eef2ff;
+      padding: 1.2rem;
+    }
+
+    .band ul {
+      margin: 0;
+      padding-left: 1.1rem;
+    }
+
+    .band li {
+      margin: 0.35rem 0;
+    }
+
+    .report {
+      display: grid;
+      grid-template-columns: 0.9fr 1.1fr;
+      gap: 1.2rem;
+      align-items: start;
+    }
+
+    .report-visual img {
+      width: 100%;
+      display: block;
+      border-radius: 8px;
+      border: 1px solid var(--line);
+    }
+
+    .caption {
+      color: var(--muted);
+      font-size: 0.9rem;
+      margin-top: 0.45rem;
+    }
+
+    .score {
+      display: inline-flex;
+      align-items: baseline;
+      gap: 0.35rem;
+      padding: 0.55rem 0.72rem;
+      border-radius: 7px;
+      background: #fee2e2;
+      color: #991b1b;
+      font-weight: 850;
+      margin: 0 0 0.8rem;
+    }
+
+    .score b {
+      font-size: 1.7rem;
+    }
+
+    .report-line {
+      border-left: 3px solid var(--accent);
+      padding: 0.15rem 0 0.65rem 0.85rem;
+      margin-bottom: 0.7rem;
+    }
+
+    .report-line strong {
+      display: block;
+      margin-bottom: 0.2rem;
+    }
+
+    .faq {
+      border-top: 1px solid var(--line);
+      padding: 1rem 0;
+    }
+
+    .faq strong {
+      display: block;
+      margin-bottom: 0.3rem;
+    }
+
+    .cta-panel {
+      border: 1px solid #fecaca;
+      border-radius: 8px;
+      padding: 1.35rem;
+      background: #fff7f7;
+    }
+
+    .cta-panel .actions {
+      margin-top: 1rem;
+    }
+
+    .cta-panel .button.secondary {
+      color: var(--ink);
+      border-color: var(--line);
+      background: #ffffff;
+    }
+
+    footer {
+      border-top: 1px solid var(--line);
+      padding: 1.5rem 1.25rem;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    footer div {
+      max-width: 1120px;
+      margin: 0 auto;
+    }
+
+    @media (max-width: 760px) {
+      .nav {
+        display: none;
+      }
+
+      .hero {
+        min-height: 600px;
+        background:
+          linear-gradient(180deg, rgba(5, 9, 18, 0.28), rgba(5, 9, 18, 0.86)),
+          url("./assets/release-analyzed.jpg") center top / cover no-repeat;
+      }
+
+      .hero-inner {
+        padding-bottom: 3rem;
+      }
+
+      .grid,
+      .report {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "Basketball Wurf Check",
+    "applicationCategory": "SportsApplication",
+    "operatingSystem": "Web",
+    "url": "https://basketballwurfcheck.de/",
+    "offers": {
+      "@type": "Offer",
+      "price": "1.99",
+      "priceCurrency": "EUR"
+    },
+    "description": "Online Wurfanalyse fuer Basketballspieler anhand eines kurzen Wurfvideos."
+  }
+  </script>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">Basketball Wurf Check</div>
+    <nav class="nav" aria-label="Hauptnavigation">
+      <a href="#bericht">Beispielbericht</a>
+      <a href="#video">Video-Anforderungen</a>
+      <a href="#faq">FAQ</a>
+      <a href="https://basketball-ai-coach-shoot.streamlit.app/">Bericht erstellen</a>
+    </nav>
+  </header>
+
+  <section class="hero">
+    <div class="hero-inner">
+      <div class="eyebrow">Basketball Wurfanalyse online</div>
+      <h1>Pruefe deine Wurftechnik mit einem kurzen Video.</h1>
+      <p>Lade dein Basketball-Wurfvideo hoch und erhalte einen strukturierten Technikbericht zu Release-Pose, Balance, Timing, Wurfstabilitaet und konkreten Trainingshinweisen.</p>
+      <div class="actions">
+        <a class="button primary" href="https://basketball-ai-coach-shoot.streamlit.app/">Bericht erstellen</a>
+        <a class="button secondary" href="#bericht">Beispiel ansehen</a>
+      </div>
+      <div class="trust-row">
+        <span>Beta-Bericht ab 1,99 Euro</span>
+        <span>5+ Wuerfe empfohlen</span>
+        <span>Ein Clip reicht fuer den ersten Check</span>
+      </div>
+    </div>
+  </section>
+
+  <main>
+    <section>
+      <h2>Wurftechnik analysieren, ohne direkt einen Trainertermin zu brauchen.</h2>
+      <p class="section-lead">Basketball Wurf Check ist fuer Spieler, Eltern und Coaches gedacht, die schnell verstehen wollen, warum ein Wurf unkonstant wirkt. Der Bericht bewertet sichtbare Technik, nicht die Trefferquote eines einzelnen Wurfes.</p>
+      <div class="grid">
+        <article class="card">
+          <strong>Fuer Spieler</strong>
+          <p>Erkenne, ob Release, Koerperbalance, Kniewinkel oder Timing deinen Wurf unruhig machen.</p>
+        </article>
+        <article class="card">
+          <strong>Fuer Eltern</strong>
+          <p>Erhalte einen klaren Trainingsfokus, bevor das naechste Training oder die naechste Halleneinheit beginnt.</p>
+        </article>
+        <article class="card">
+          <strong>Fuer Coaches</strong>
+          <p>Nutze den Video-Bericht als schnelle Grundlage fuer Technikgespraeche und gezielte Drills.</p>
+        </article>
+      </div>
+    </section>
+
+    <section id="video">
+      <h2>Welches Video funktioniert am besten?</h2>
+      <p class="section-lead">Je klarer der Clip, desto mehr Details kann der Bericht liefern. Auch ein einzelner Wurf kann analysiert werden, aber mehrere Wuerfe machen die Stabilitaetsbewertung deutlich nuetzlicher.</p>
+      <div class="band">
+        <ul>
+          <li>Ideal sind 5 oder mehr Wuerfe aus aehnlicher Perspektive.</li>
+          <li>Fuesse, Knie, Wurfhand und Follow-through sollten sichtbar sein.</li>
+          <li>Seitenansicht oder 45 Grad sind am besten; Frontansicht kann trotzdem Hinweise liefern.</li>
+          <li>Normales Handyvideo reicht, solange Licht und Kamera stabil sind.</li>
+          <li>Keine Zeitlupe, keine Highlight-Cuts, keine zu langen 4K/HDR-Dateien.</li>
+        </ul>
+      </div>
+    </section>
+
+    <section id="bericht">
+      <h2>So sieht ein Basisbericht aus.</h2>
+      <p class="section-lead">Der Bericht soll nicht zehn Baustellen oeffnen. Er priorisiert die wichtigste Aenderung, die du in der naechsten Einheit testen kannst.</p>
+      <div class="report">
+        <div class="report-visual">
+          <img src="./assets/release-analyzed.jpg" alt="Beispiel einer markierten Release-Pose bei einem Basketballwurf">
+          <div class="caption">Beispiel einer markierten Release-Pose. Die tatsaechlichen Werte haengen vom hochgeladenen Video ab.</div>
+        </div>
+        <div>
+          <div class="score"><b>84</b><span>/100 Form-Score</span></div>
+          <div class="report-line">
+            <strong>Release-Pose</strong>
+            <p>Ellbogenwinkel, Release-Hoehe und Oberkoerperposition werden aus dem Video extrahiert.</p>
+          </div>
+          <div class="report-line">
+            <strong>Wurfstabilitaet</strong>
+            <p>Bei mehreren Wuerfen vergleicht der Bericht, ob Release und Timing wiederholbar wirken.</p>
+          </div>
+          <div class="report-line">
+            <strong>Trainingsfokus</strong>
+            <p>Du bekommst einen konkreten naechsten Schwerpunkt statt einer langen, unklaren Fehlerliste.</p>
+          </div>
+          <div class="report-line">
+            <strong>PDF-Download</strong>
+            <p>Der Bericht kann als PDF gespeichert werden, inklusive Messwerte, Bild und Uebungsvorschlag.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="faq">
+      <h2>Haeufige Fragen</h2>
+      <div class="faq">
+        <strong>Kann ich nur einen Wurf hochladen?</strong>
+        <p>Ja. Ein Wurf reicht fuer einen ersten Technikcheck. Fuer die Stabilitaet sind 5 oder mehr Wuerfe besser.</p>
+      </div>
+      <div class="faq">
+        <strong>Ist der Score eine Trefferwahrscheinlichkeit?</strong>
+        <p>Nein. Der Score beschreibt sichtbare Mechanik, Balance, Timing und Wiederholbarkeit. Er sagt nicht voraus, ob ein einzelner Wurf trifft.</p>
+      </div>
+      <div class="faq">
+        <strong>Funktioniert ein Handyvideo?</strong>
+        <p>Ja. Ein normales Handyvideo ist gut genug, wenn der ganze Koerper sichtbar bleibt und die Aufnahme nicht stark verwackelt ist.</p>
+      </div>
+      <div class="faq">
+        <strong>Was passiert, wenn der Bericht nicht passt?</strong>
+        <p>Du kannst ueber das Feedback- und Rueckerstattungsformular eine kurze Beschreibung mit deiner Zahlungs-E-Mail senden.</p>
+      </div>
+    </section>
+
+    <section class="cta-panel">
+      <h2>Bereit fuer deinen ersten Wurfbericht?</h2>
+      <p class="section-lead">Starte mit einem kurzen Clip. Wenn du spaeter mehrere Wuerfe aus derselben Perspektive filmst, wird besonders die Stabilitaetsanalyse aussagekraeftiger.</p>
+      <div class="actions">
+        <a class="button primary" href="https://basketball-ai-coach-shoot.streamlit.app/">Bericht erstellen</a>
+        <a class="button secondary" href="https://basketball-ai-coach-shoot.streamlit.app/#analysis-tool">Direkt zum Upload</a>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div>
+      Basketball Wurf Check bewertet sichtbare Wurftechnik in hochgeladenen Videos. Der Bericht ersetzt keine medizinische Beratung und keinen persoenlichen Coach.
+    </div>
+  </footer>
+</body>
+</html>
