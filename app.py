@@ -1359,27 +1359,15 @@ def render_landing(lang_code, payment_url=""):
         <section class="market-hero">
             <div class="market-copy">
                 <div class="eyebrow">{t["eyebrow"]}</div>
-                <h1>{landing["headline"]}</h1>
-                <p>{landing["subhead"]}</p>
+                <h1>{t["title"]}</h1>
+                <p>{t["desc"]}</p>
                 <div class="market-badges">{badge_html}</div>
-                <div class="market-price">{landing["price"]}</div>
                 <div class="market-actions">
                     <a class="market-primary" href="#analysis-tool">{landing["cta"]}</a>
                     <a class="market-secondary" href="{payment_action}"{payment_target}>{landing["payment_submit"]}</a>
                 </div>
                 <div class="market-note">{landing["payment_note"]}</div>
-                <div class="market-proof">{landing["proof"]}</div>
             </div>
-        </section>
-        """,
-        unsafe_allow_html=True,
-    )
-
-    st.markdown(
-        f"""
-        <section class="seo-section">
-            <h2>{escape(landing["seo_title"])}</h2>
-            <p>{escape(landing["seo_body"])}</p>
         </section>
         """,
         unsafe_allow_html=True,
@@ -1399,32 +1387,6 @@ def render_landing(lang_code, payment_url=""):
                 unsafe_allow_html=True,
             )
 
-    card_cols = st.columns(3)
-    for col, (title, body) in zip(card_cols, landing["cards"]):
-        with col:
-            st.markdown(
-                f"""
-                <div class="market-card">
-                    <h3>{title}</h3>
-                    <p>{body}</p>
-                </div>
-                """,
-                unsafe_allow_html=True,
-            )
-
-    st.markdown(f"#### {landing['audience_title']}")
-    audience_cols = st.columns(3)
-    for col, item in zip(audience_cols, landing["audience_items"]):
-        with col:
-            st.markdown(
-                f"""
-                <div class="seo-mini-card">
-                    {escape(item)}
-                </div>
-                """,
-                unsafe_allow_html=True,
-            )
-
     st.markdown(f"#### {landing['video_requirements_title']}")
     requirement_html = "".join(f"<li>{escape(item)}</li>" for item in landing["video_requirements"])
     st.markdown(
@@ -1432,66 +1394,6 @@ def render_landing(lang_code, payment_url=""):
         <div class="requirements-box">
             <ul>{requirement_html}</ul>
         </div>
-        """,
-        unsafe_allow_html=True,
-    )
-
-    st.markdown(f"#### {landing['report_title']}")
-    st.caption(landing["report_summary"])
-    report_cols = st.columns([0.7, 1.3], gap="large")
-    with report_cols[0]:
-        st.metric("Score", landing["sample_score"])
-        for item in landing["sample_metrics"]:
-            st.caption(item)
-        sample_image_path = BASE_DIR / "release_analyzed.jpg"
-        if sample_image_path.exists():
-            st.image(str(sample_image_path), caption=landing["sample_image_caption"], use_container_width=True)
-    with report_cols[1]:
-        for title, body in landing["report_sections"]:
-            st.markdown(
-                f"""
-                <div class="report-row">
-                    <strong>{title}</strong>
-                    <p>{body}</p>
-                </div>
-                """,
-                unsafe_allow_html=True,
-            )
-
-    st.markdown(f"#### {landing['trust_title']}")
-    trust_cols = st.columns(3)
-    for col, item in zip(trust_cols, landing["trust_items"]):
-        with col:
-            st.markdown(
-                f"""
-                <div class="trust-note">
-                    {item}
-                </div>
-                """,
-                unsafe_allow_html=True,
-            )
-
-    st.markdown(f"#### {landing['questions_title']}")
-    q_cols = st.columns([1, 1])
-    for index, question in enumerate(landing["questions"]):
-        with q_cols[index % 2]:
-            st.markdown(f"- {question}")
-
-    st.markdown(f"#### {landing['faq_title']}")
-    for question, answer in landing["faqs"]:
-        with st.expander(question):
-            st.write(answer)
-
-    st.markdown(
-        f"""
-        <section class="final-cta">
-            <h2>{escape(landing["final_cta_title"])}</h2>
-            <p>{escape(landing["final_cta_body"])}</p>
-            <div class="market-actions">
-                <a class="market-primary" href="#analysis-tool">{landing["cta"]}</a>
-                <a class="market-secondary" href="{payment_action}"{payment_target}>{landing["payment_submit"]}</a>
-            </div>
-        </section>
         """,
         unsafe_allow_html=True,
     )
@@ -1775,17 +1677,6 @@ payment_access = get_query_param("access").strip()
 payment_unlocked = not payment_link_url or bool(payment_access_token and payment_access == payment_access_token)
 
 render_landing(lang_code, payment_link_url)
-
-st.markdown(
-    f"""
-    <div class="hero">
-        <div class="eyebrow">{t["eyebrow"]}</div>
-        <h1>{t["title"]}</h1>
-        <p>{t["desc"]}</p>
-    </div>
-    """,
-    unsafe_allow_html=True,
-)
 
 settings_col, media_col = st.columns([0.92, 1.55], gap="large")
 current_videos = st.session_state.get("uploaded_videos", [])

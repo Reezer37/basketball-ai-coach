@@ -7,6 +7,10 @@
   <meta name="description" content="Basketball Wurf Check analysiert dein Wurfvideo online: Release-Pose, Wurftechnik, Stabilität und konkrete Trainingshinweise ab 1,99 Euro.">
   <meta name="robots" content="index, follow">
   <link rel="canonical" href="https://basketballwurfcheck.de/">
+  <link rel="alternate" hreflang="de" href="https://basketballwurfcheck.de/">
+  <link rel="alternate" hreflang="en" href="https://basketballwurfcheck.de/en/">
+  <link rel="alternate" hreflang="zh" href="https://basketballwurfcheck.de/zh/">
+  <link rel="alternate" hreflang="x-default" href="https://basketballwurfcheck.de/">
   <meta property="og:title" content="Basketball Wurfanalyse online">
   <meta property="og:description" content="Lade ein kurzes Wurfvideo hoch und erhalte einen verständlichen Technikbericht zu Release, Balance, Timing und Stabilität.">
   <meta property="og:type" content="website">
@@ -68,6 +72,28 @@
 
     .nav a {
       text-decoration: none;
+    }
+
+    .lang-switch {
+      display: flex;
+      gap: 0.45rem;
+      align-items: center;
+      font-size: 0.9rem;
+      font-weight: 750;
+    }
+
+    .lang-switch a {
+      text-decoration: none;
+      color: var(--muted);
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 0.18rem 0.48rem;
+    }
+
+    .lang-switch a[aria-current="page"] {
+      color: var(--accent-dark);
+      border-color: #fecaca;
+      background: #fff1f2;
     }
 
     .hero {
@@ -317,6 +343,10 @@
         display: none;
       }
 
+      .topbar {
+        align-items: flex-start;
+      }
+
       .hero {
         min-height: 600px;
         background:
@@ -360,6 +390,11 @@
       <a href="#faq">FAQ</a>
       <a href="https://basketball-ai-coach-shoot.streamlit.app/">Bericht erstellen</a>
     </nav>
+    <div class="lang-switch" aria-label="Sprache">
+      <a href="/" aria-current="page">DE</a>
+      <a href="/en/">EN</a>
+      <a href="/zh/">中文</a>
+    </div>
   </header>
 
   <section class="hero">
