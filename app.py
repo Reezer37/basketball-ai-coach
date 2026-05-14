@@ -1659,10 +1659,15 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
+query_lang = get_query_param("lang").strip().lower()
+default_lang_index = 0
+if query_lang in LANG_OPTIONS.values():
+    default_lang_index = list(LANG_OPTIONS.values()).index(query_lang)
+
 language_label = st.selectbox(
     "Language / 语言",
     list(LANG_OPTIONS.keys()),
-    index=0,
+    index=default_lang_index,
 )
 lang_code = LANG_OPTIONS[language_label]
 t = TEXT[lang_code]
