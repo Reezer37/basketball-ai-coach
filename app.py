@@ -502,6 +502,30 @@ LANDING = {
             "Schlechte Videos liefern weniger Details, aber können trotzdem für einen ersten Hinweis reichen.",
             "Frontale Clips sind möglich; Seitenansicht oder 45 Grad bleibt für Biomechanik am besten.",
         ],
+        "seo_title": "Online Basketball Wurfanalyse für Sprungwurf, Freiwurf und Catch-and-Shoot",
+        "seo_body": "Der Basketball Wurf-Check richtet sich an Spielerinnen, Spieler, Eltern und Coaches in Deutschland, die eine schnelle zweite Meinung zur Wurftechnik suchen. Du lädst ein kurzes Video hoch und erhältst einen verständlichen Bericht zu Release, Körperbalance, Kniewinkel, Ellbogenwinkel, Timing und Stabilität über mehrere Würfe.",
+        "audience_title": "Für wen ist der Wurf-Check gedacht?",
+        "audience_items": [
+            "Hobbyspieler, die wissen wollen, warum ihr Wurf unkonstant ist.",
+            "Jugendspieler und Eltern, die vor dem nächsten Training einen klaren Fokus suchen.",
+            "Coaches, die eine schnelle Video-Zusammenfassung als Gesprächsgrundlage nutzen möchten.",
+        ],
+        "video_requirements_title": "Welches Video funktioniert am besten?",
+        "video_requirements": [
+            "Ein Clip mit 5 oder mehr Würfen ist ideal; ein einzelner Wurf reicht für einen ersten Check.",
+            "Ganzkörperaufnahme mit Füßen, Knien, Wurfhand und Follow-through im Bild.",
+            "Seitenansicht oder 45 Grad sind am besten, frontale Videos können trotzdem Hinweise liefern.",
+            "Gute Beleuchtung, ruhige Kamera, keine Zeitlupe und keine Highlight-Cuts.",
+        ],
+        "faq_title": "Häufige Fragen zur Basketball Wurfanalyse",
+        "faqs": [
+            ("Kann ich nur einen Wurf hochladen?", "Ja. Ein einzelner Wurf kann analysiert werden. Für Stabilität und Wiederholbarkeit sind 5 oder mehr Würfe aber deutlich besser."),
+            ("Ist das eine Trefferquote?", "Nein. Der Score beschreibt sichtbare Technik, Balance, Timing und Wiederholbarkeit. Er sagt nicht voraus, ob ein einzelner Wurf trifft."),
+            ("Funktioniert ein Handyvideo?", "Ja. Ein normales Handyvideo reicht, solange der Körper sichtbar bleibt und die Aufnahme nicht zu stark verwackelt ist."),
+            ("Kann ich eine Rückerstattung anfragen?", "Ja. Wenn der Bericht unbrauchbar wirkt oder ein Problem auftritt, nutze das Feedback- und Rückerstattungsformular mit deiner Zahlungs-E-Mail."),
+        ],
+        "final_cta_title": "Bereit für deinen ersten Wurfbericht?",
+        "final_cta_body": "Starte mit einem kurzen Video. Wenn du später mehr Würfe aus derselben Perspektive filmst, wird besonders die Stabilitätsanalyse aussagekräftiger.",
         "payment_submit": "Beta-Bericht kaufen",
         "payment_hint": "Öffnet den sicheren Stripe-Bezahlvorgang in einem neuen Tab.",
         "payment_note": "Nach der Zahlung kommst du zurück und kannst dein Wurfvideo hochladen.",
@@ -560,6 +584,30 @@ LANDING = {
             "Lower-quality videos return fewer details, but can still give a first signal.",
             "Front-view clips can work; side view or 45 degrees is still best for biomechanics.",
         ],
+        "seo_title": "Online basketball shot analysis for jump shots, free throws, and catch-and-shoot form",
+        "seo_body": "Basketball Shot Form Check is built for players, parents, and coaches who want a fast second opinion on shooting mechanics. Upload a short video and receive a clear report covering release pose, balance, knee angles, elbow angle, timing, and consistency across repeated shots.",
+        "audience_title": "Who is this shot check for?",
+        "audience_items": [
+            "Players who want to understand why their shot feels inconsistent.",
+            "Youth players and parents who need one clear practice focus before the next gym session.",
+            "Coaches who want a quick video summary to support a technique conversation.",
+        ],
+        "video_requirements_title": "What kind of video works best?",
+        "video_requirements": [
+            "A clip with 5 or more shots is ideal; one shot is enough for a first check.",
+            "Full-body view with feet, knees, shooting hand, and follow-through visible.",
+            "Side view or 45 degrees is best, but front-view clips can still provide useful cues.",
+            "Good lighting, steady camera, no slow motion, and no highlight cuts.",
+        ],
+        "faq_title": "Basketball shot analysis FAQ",
+        "faqs": [
+            ("Can I upload only one shot?", "Yes. One shot can be analyzed. For consistency and repeatability, 5 or more shots are much better."),
+            ("Is the score a make percentage?", "No. The score describes visible mechanics, balance, timing, and repeatability. It does not predict whether one shot goes in."),
+            ("Does a phone video work?", "Yes. A normal phone video is fine if the body stays visible and the camera is reasonably steady."),
+            ("Can I request a refund?", "Yes. If the report is unusable or something goes wrong, use the feedback and refund form with your payment email."),
+        ],
+        "final_cta_title": "Ready for your first shot report?",
+        "final_cta_body": "Start with a short video. If you later record more shots from the same angle, the consistency section becomes more useful.",
         "payment_submit": "Buy beta report",
         "payment_hint": "Opens the secure Stripe checkout in a new tab.",
         "payment_note": "After payment, return here and upload your shooting video.",
@@ -618,6 +666,30 @@ LANDING = {
             "视频质量较低时会减少细节，但仍可给出初步方向。",
             "正面视频也可以尝试；侧面或 45 度角仍然最适合生物力学分析。",
         ],
+        "seo_title": "在线篮球投篮动作分析：跳投、罚球和接球投动作检查",
+        "seo_body": "篮球投篮动作体检适合想快速获得第二意见的球员、家长和教练。上传一段简短投篮视频，即可获得关于出手姿态、身体平衡、膝盖角度、手肘角度、发力节奏和多次投篮稳定性的结构化报告。",
+        "audience_title": "这个投篮检查适合谁？",
+        "audience_items": [
+            "想知道自己为什么投篮不稳定的篮球爱好者。",
+            "希望在下一次训练前找到一个明确重点的青少年球员和家长。",
+            "想用视频摘要辅助沟通动作问题的教练。",
+        ],
+        "video_requirements_title": "什么视频最适合分析？",
+        "video_requirements": [
+            "同一段视频里 5 次或更多投篮最理想；只有 1 次投篮也可以先做初步检查。",
+            "全身入镜，脚、膝盖、投篮手和随球动作都要可见。",
+            "侧面或 45 度角最好，正面视频也可以给出部分动作提示。",
+            "光线清楚、镜头稳定，不要慢动作，也不要剪辑成集锦。",
+        ],
+        "faq_title": "篮球投篮动作分析常见问题",
+        "faqs": [
+            ("只上传一次投篮可以吗？", "可以。一次投篮也能分析；如果想看稳定性和可重复性，5 次或更多投篮会更有价值。"),
+            ("评分代表命中率吗？", "不代表。评分描述的是可见动作、平衡、节奏和可重复性，不预测某一次投篮是否命中。"),
+            ("手机拍摄的视频可以吗？", "可以。普通手机视频就可以，只要全身可见、画面不要过度晃动。"),
+            ("如果报告不满意可以退款吗？", "可以申请。如果报告不可用或出现问题，请通过反馈和退款表单提交付款邮箱和简短说明。"),
+        ],
+        "final_cta_title": "准备生成第一份投篮报告了吗？",
+        "final_cta_body": "先用一段短视频开始。之后如果从同一角度拍更多投篮，稳定性分析会更有参考价值。",
         "payment_submit": "购买 Beta 报告",
         "payment_hint": "会在新标签页打开安全的 Stripe 支付页面。",
         "payment_note": "付款后回到这里上传你的投篮视频。",
@@ -1280,6 +1352,8 @@ def render_stability(stability):
 def render_landing(lang_code, payment_url=""):
     landing = LANDING[lang_code]
     badge_html = "".join(f"<span>{badge}</span>" for badge in landing["badges"])
+    payment_action = payment_url or "#analysis-tool"
+    payment_target = ' target="_blank" rel="noopener"' if payment_url else ""
     st.markdown(
         f"""
         <section class="market-hero">
@@ -1291,10 +1365,21 @@ def render_landing(lang_code, payment_url=""):
                 <div class="market-price">{landing["price"]}</div>
                 <div class="market-actions">
                     <a class="market-primary" href="#analysis-tool">{landing["cta"]}</a>
+                    <a class="market-secondary" href="{payment_action}"{payment_target}>{landing["payment_submit"]}</a>
                 </div>
                 <div class="market-note">{landing["payment_note"]}</div>
                 <div class="market-proof">{landing["proof"]}</div>
             </div>
+        </section>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    st.markdown(
+        f"""
+        <section class="seo-section">
+            <h2>{escape(landing["seo_title"])}</h2>
+            <p>{escape(landing["seo_body"])}</p>
         </section>
         """,
         unsafe_allow_html=True,
@@ -1326,6 +1411,30 @@ def render_landing(lang_code, payment_url=""):
                 """,
                 unsafe_allow_html=True,
             )
+
+    st.markdown(f"#### {landing['audience_title']}")
+    audience_cols = st.columns(3)
+    for col, item in zip(audience_cols, landing["audience_items"]):
+        with col:
+            st.markdown(
+                f"""
+                <div class="seo-mini-card">
+                    {escape(item)}
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+
+    st.markdown(f"#### {landing['video_requirements_title']}")
+    requirement_html = "".join(f"<li>{escape(item)}</li>" for item in landing["video_requirements"])
+    st.markdown(
+        f"""
+        <div class="requirements-box">
+            <ul>{requirement_html}</ul>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
 
     st.markdown(f"#### {landing['report_title']}")
     st.caption(landing["report_summary"])
@@ -1368,6 +1477,25 @@ def render_landing(lang_code, payment_url=""):
         with q_cols[index % 2]:
             st.markdown(f"- {question}")
 
+    st.markdown(f"#### {landing['faq_title']}")
+    for question, answer in landing["faqs"]:
+        with st.expander(question):
+            st.write(answer)
+
+    st.markdown(
+        f"""
+        <section class="final-cta">
+            <h2>{escape(landing["final_cta_title"])}</h2>
+            <p>{escape(landing["final_cta_body"])}</p>
+            <div class="market-actions">
+                <a class="market-primary" href="#analysis-tool">{landing["cta"]}</a>
+                <a class="market-secondary" href="{payment_action}"{payment_target}>{landing["payment_submit"]}</a>
+            </div>
+        </section>
+        """,
+        unsafe_allow_html=True,
+    )
+
     st.divider()
     st.markdown('<div id="analysis-tool"></div>', unsafe_allow_html=True)
 
@@ -1385,7 +1513,7 @@ def render_support_box(feedback_url, support_email):
 
 
 st.set_page_config(
-    page_title=TEXT["en"]["page_title"],
+    page_title="Basketball Wurfanalyse online | Wurftechnik per Video prüfen",
     page_icon="🏀",
     layout="wide",
 )
@@ -1515,6 +1643,25 @@ st.markdown(
         opacity: 0.72;
         font-size: 0.9rem;
     }
+    .seo-section {
+        border: 1px solid rgba(127, 127, 127, 0.22);
+        border-radius: 8px;
+        padding: 1rem 1.1rem;
+        margin: 0.85rem 0 1.15rem;
+        background: rgba(255, 255, 255, 0.035);
+    }
+    .seo-section h2,
+    .final-cta h2 {
+        font-size: 1.35rem;
+        line-height: 1.25;
+        margin: 0 0 0.45rem;
+    }
+    .seo-section p,
+    .final-cta p {
+        margin: 0;
+        opacity: 0.80;
+        max-width: 930px;
+    }
     .step-card {
         border: 1px solid rgba(59, 130, 246, 0.24);
         border-radius: 8px;
@@ -1539,6 +1686,29 @@ st.markdown(
         min-height: 145px;
         background: rgba(127, 127, 127, 0.07);
         margin-bottom: 0.5rem;
+    }
+    .seo-mini-card {
+        border: 1px solid rgba(127, 127, 127, 0.24);
+        border-radius: 8px;
+        padding: 0.85rem 0.95rem;
+        min-height: 92px;
+        background: rgba(127, 127, 127, 0.07);
+        margin-bottom: 0.7rem;
+        opacity: 0.88;
+    }
+    .requirements-box {
+        border: 1px solid rgba(59, 130, 246, 0.26);
+        border-radius: 8px;
+        padding: 0.85rem 1rem;
+        background: rgba(59, 130, 246, 0.08);
+        margin-bottom: 0.8rem;
+    }
+    .requirements-box ul {
+        margin: 0;
+        padding-left: 1.15rem;
+    }
+    .requirements-box li {
+        margin: 0.3rem 0;
     }
     .market-card h3 {
         font-size: 1.05rem;
@@ -1566,6 +1736,13 @@ st.markdown(
         color: inherit;
         opacity: 0.86;
         margin-bottom: 0.7rem;
+    }
+    .final-cta {
+        border: 1px solid rgba(239, 68, 68, 0.28);
+        border-radius: 8px;
+        padding: 1.05rem 1.15rem;
+        background: rgba(239, 68, 68, 0.08);
+        margin-top: 1rem;
     }
     @media (max-width: 640px) {
         .market-copy h1 {
